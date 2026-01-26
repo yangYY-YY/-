@@ -1,0 +1,14 @@
+﻿{
+  "pages": [
+    "pages/checkin/index",
+    "pages/success/index",
+    "pages/history/index",
+    "pages/mine/index"
+  ],
+  "window": {
+    "navigationBarTitleText": "展会打卡系统",
+    "navigationBarBackgroundColor": "#f5efe6",
+    "navigationBarTextStyle": "black",
+    "backgroundTextStyle": "light"
+  }
+}

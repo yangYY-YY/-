@@ -1,0 +1,141 @@
+﻿:root {
+  --bg: #f4f1ec;
+  --card: #fff9f0;
+  --primary: #2e4d3d;
+  --accent: #c07328;
+  --muted: #6c6258;
+  --border: #e3d8c9;
+}
+
+* {
+  box-sizing: border-box;
+  font-family: "Noto Serif SC", "Source Han Serif SC", "STSong", serif;
+}
+
+body {
+  margin: 0;
+  background: radial-gradient(circle at top, #fefcf8, #ece6db);
+  color: var(--primary);
+}
+
+.app {
+  max-width: 980px;
+  margin: 40px auto;
+  padding: 0 20px 60px;
+}
+
+.card {
+  background: var(--card);
+  padding: 24px;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  box-shadow: 0 16px 30px rgba(46, 77, 61, 0.08);
+}
+
+h1,
+h2,
+h3 {
+  margin-top: 0;
+}
+
+label {
+  display: block;
+  margin-bottom: 12px;
+  font-size: 14px;
+}
+
+input,
+textarea {
+  width: 100%;
+  margin-top: 6px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: #fff;
+  font-size: 14px;
+}
+
+button {
+  margin-top: 10px;
+  padding: 10px 18px;
+  border: none;
+  border-radius: 999px;
+  background: var(--primary);
+  color: #fff;
+  cursor: pointer;
+}
+
+button.ghost {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--primary);
+}
+
+.muted {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.error {
+  color: #a83b3b;
+  margin-top: 10px;
+}
+
+.hidden {
+  display: none;
+}
+
+.grid {
+  display: grid;
+  gap: 20px;
+  margin-top: 20px;
+}
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  margin: 12px 0;
+}
+
+.row {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+#exhibitionList {
+  margin-top: 12px;
+  display: grid;
+  gap: 8px;
+}
+
+.exhibition-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: #fff;
+}
+
+.qr-block {
+  margin-top: 16px;
+  text-align: center;
+}
+
+.qr {
+  width: 180px;
+  height: 180px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: #fff;
+}
+
+@media (max-width: 720px) {
+  .row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}

@@ -1,0 +1,87 @@
+﻿<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>展会打卡系统 - 后台</title>
+    <link rel="stylesheet" href="./admin.css" />
+  </head>
+  <body>
+    <main class="app">
+      <section class="card" id="login">
+        <h1>展会打卡系统</h1>
+        <p class="muted">后台管理登录</p>
+        <form id="loginForm">
+          <label>
+            账号
+            <input name="username" required />
+          </label>
+          <label>
+            密码
+            <input name="password" type="password" required />
+          </label>
+          <button type="submit">登录</button>
+        </form>
+        <div class="qr-block">
+          <p class="muted">扫码进入后台登录页面</p>
+          <img src="/admin/qr.png" alt="后台二维码" class="qr" />
+          <p class="muted">若二维码为空，请先配置 `PUBLIC_BASE_URL` 并重启后端</p>
+        </div>
+        <p class="error" id="loginError"></p>
+      </section>
+
+      <section class="dashboard hidden" id="dashboard">
+        <header>
+          <div>
+            <h2>后台管理</h2>
+            <p class="muted" id="activeExhibition"></p>
+          </div>
+          <button id="logoutBtn" class="ghost">退出</button>
+        </header>
+
+        <div class="grid">
+          <article class="card">
+            <h3>数据概览</h3>
+            <div class="stats">
+              <div>
+                <p class="muted">签到数</p>
+                <h4 id="statCheckins">0</h4>
+              </div>
+              <div>
+                <p class="muted">中奖数</p>
+                <h4 id="statWinners">0</h4>
+              </div>
+            </div>
+            <button id="exportBtn">导出 Excel</button>
+          </article>
+
+          <article class="card">
+            <h3>展会管理</h3>
+            <form id="createExhibitionForm" class="row">
+              <input name="name" placeholder="新展会名称" required />
+              <button type="submit">创建</button>
+            </form>
+            <div id="exhibitionList"></div>
+          </article>
+
+          <article class="card">
+            <h3>抽奖设置</h3>
+            <form id="drawForm">
+              <label>
+                总中奖概率 (0-1)
+                <input name="winRate" type="number" min="0" max="1" step="0.01" />
+              </label>
+              <label>
+                奖品列表 (JSON 数组)
+                <textarea name="prizes" rows="6" placeholder='[{"name":"礼品A","weight":1}]'></textarea>
+              </label>
+              <button type="submit">保存设置</button>
+            </form>
+            <p class="muted">权重用于已中奖用户的奖品分配</p>
+          </article>
+        </div>
+      </section>
+    </main>
+    <script src="./admin.js"></script>
+  </body>
+</html>
