@@ -1,5 +1,6 @@
 ﻿App({
   globalData: {
-    apiBase: "https://YOUR_HOST"
+    apiBase: "https://expo-checkin.onrender.com"
   }
 });
+

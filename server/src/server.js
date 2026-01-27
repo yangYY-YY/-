@@ -30,6 +30,8 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 
+app.set("trust proxy", 1);
+
 app.use(morgan("dev"));
 app.use(express.json({ limit: "1mb" }));
 app.use(express.urlencoded({ extended: true }));
@@ -50,8 +52,12 @@ const requireAdmin = (req, res, next) => {
   res.status(401).json({ error: "unauthorized" });
 };
 
-const getBaseUrl = (req) =>
-  process.env.PUBLIC_BASE_URL || `${req.protocol}://${req.get("host")}`;
+const getBaseUrl = (req) => {
+  if (process.env.PUBLIC_BASE_URL) return process.env.PUBLIC_BASE_URL;
+  const forwarded = req.headers["x-forwarded-proto"];
+  const proto = (forwarded || req.protocol || "http").split(",")[0].trim();
+  return `${proto}://${req.get("host")}`;
+};
 
 const ensureQrImage = async () => {
   const baseUrl = process.env.PUBLIC_BASE_URL;
