@@ -7,6 +7,7 @@ import morgan from "morgan";
 import path from "path";
 import { fileURLToPath } from "url";
 import QRCode from "qrcode";
+import crypto from "crypto";
 import db from "./db.js";
 import {
   ensureActiveExhibition,
@@ -29,6 +30,59 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
+const tokenSecret = process.env.SESSION_SECRET || "change_this_secret";
+const tokenTtlMs = 12 * 60 * 60 * 1000;
+
+const createToken = (username) => {
+  const payload = { u: username, exp: Date.now() + tokenTtlMs };
+  const body = Buffer.from(JSON.stringify(payload)).toString("base64url");
+  const sig = crypto.createHmac("sha256", tokenSecret).update(body).digest("base64url");
+  return `${body}.${sig}`;
+};
+
+const verifyToken = (token) => {
+  const parts = token.split(".");
+  if (parts.length !== 2) return null;
+  const [body, sig] = parts;
+  const expected = crypto.createHmac("sha256", tokenSecret).update(body).digest("base64url");
+  if (expected.length !== sig.length || !crypto.timingSafeEqual(Buffer.from(expected), Buffer.from(sig))) {
+    return null;
+  }
+  try {
+    const payload = JSON.parse(Buffer.from(body, "base64url").toString("utf8"));
+    if (!payload.exp || Date.now() > payload.exp) return null;
+    return payload;
+  } catch {
+    return null;
+  }
+};
+
+const tokenSecret = process.env.SESSION_SECRET || "change_this_secret";
+const tokenTtlMs = 12 * 60 * 60 * 1000;
+
+const createToken = (username) => {
+  const payload = { u: username, exp: Date.now() + tokenTtlMs };
+  const body = Buffer.from(JSON.stringify(payload)).toString("base64url");
+  const sig = crypto.createHmac("sha256", tokenSecret).update(body).digest("base64url");
+  return `${body}.${sig}`;
+};
+
+const verifyToken = (token) => {
+  const parts = token.split(".");
+  if (parts.length !== 2) return null;
+  const [body, sig] = parts;
+  const expected = crypto.createHmac("sha256", tokenSecret).update(body).digest("base64url");
+  if (expected.length !== sig.length || !crypto.timingSafeEqual(Buffer.from(expected), Buffer.from(sig))) {
+    return null;
+  }
+  try {
+    const payload = JSON.parse(Buffer.from(body, "base64url").toString("utf8"));
+    if (!payload.exp || Date.now() > payload.exp) return null;
+    return payload;
+  } catch {
+    return null;
+  }
+};
 
 app.set("trust proxy", 1);
 app.use(morgan("dev"));
@@ -47,6 +101,11 @@ app.use(
 app.use("/admin", express.static(path.join(__dirname, "..", "public", "admin")));
 
 const requireAdmin = (req, res, next) => {
+  const auth = req.headers.authorization || "";
+  if (auth.startsWith("Bearer ")) {
+    const token = auth.slice(7);
+    if (verifyToken(token)) return next();
+  }
   if (req.session?.isAdmin) return next();
   res.status(401).json({ error: "unauthorized" });
 };
@@ -193,4 +252,5 @@ const start = async () => {
 };
 
 start();
+
 
