@@ -139,3 +139,34 @@ button.ghost {
     align-items: stretch;
   }
 }
+.prize-list {
+  display: grid;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.prize-item {
+  display: grid;
+  grid-template-columns: 1.5fr 0.8fr auto;
+  gap: 10px;
+  align-items: center;
+  padding: 10px;
+  border: 1px dashed var(--border);
+  border-radius: 12px;
+  background: #fff;
+}
+
+.prize-item input {
+  margin: 0;
+}
+
+.prize-item button {
+  margin: 0;
+}
+
+@media (max-width: 720px) {
+  .prize-item {
+    grid-template-columns: 1fr;
+  }
+}
+
