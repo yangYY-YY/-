@@ -14,9 +14,17 @@ const prizeList = document.getElementById("prizeList");
 const addPrizeBtn = document.getElementById("addPrizeBtn");
 const prizeSum = document.getElementById("prizeSum");
 
+const tokenKey = "admin_token";
+const getToken = () => localStorage.getItem(tokenKey);
+const setToken = (token) => localStorage.setItem(tokenKey, token);
+const clearToken = () => localStorage.removeItem(tokenKey);
+
 const api = async (url, options = {}) => {
+  const token = getToken();
+  const headers = { "Content-Type": "application/json", ...(options.headers || {}) };
+  if (token) headers.Authorization = `Bearer ${token}`;
   const res = await fetch(url, {
-    headers: { "Content-Type": "application/json" },
+    headers,
     credentials: "include",
     ...options,
   });
@@ -32,7 +40,6 @@ const normalizePrize = (prize) => ({
   qty: prize?.qty ?? "",
 });
 
-
 const getPrizeRows = () => {
   const rows = Array.from(prizeList.querySelectorAll(".prize-item"));
   return rows.map((row) => {
@@ -40,8 +47,8 @@ const getPrizeRows = () => {
     const prob = Number(row.querySelector("input[name='prizeProb']").value || 0);
     const qtyRaw = row.querySelector("input[name='prizeQty']").value.trim();
     const qty = qtyRaw === "" ? null : Number(qtyRaw);
-  return { name, prob, qty };
-};
+    return { name, prob, qty };
+  });
 };
 
 const updatePrizeSum = () => {
@@ -61,7 +68,6 @@ const renderPrizes = (prizes) => {
       <input name="prizeProb" type="number" min="0" max="1" step="0.01" placeholder="中奖概率(0-1)" value="${prize.prob}" />
       <input name="prizeQty" type="number" min="1" step="1" placeholder="奖品数量(可空)" value="${prize.qty ?? ""}" />
       <button type="button" class="ghost" data-index="${index}">删除</button>
-
     `;
     item.querySelector("button").addEventListener("click", () => {
       const current = getPrizeRows();
@@ -110,10 +116,11 @@ loginForm.addEventListener("submit", async (event) => {
   loginError.textContent = "";
   const payload = Object.fromEntries(new FormData(loginForm));
   try {
-    await api("/api/admin/login", {
+    const data = await api("/api/admin/login", {
       method: "POST",
       body: JSON.stringify(payload),
     });
+    if (data?.token) setToken(data.token);
     loginSection.classList.add("hidden");
     dashboard.classList.remove("hidden");
     loadDashboard();
@@ -123,6 +130,7 @@ loginForm.addEventListener("submit", async (event) => {
 });
 
 logoutBtn.addEventListener("click", async () => {
+  clearToken();
   await api("/api/admin/logout", { method: "POST" });
   dashboard.classList.add("hidden");
   loginSection.classList.remove("hidden");
@@ -152,19 +160,18 @@ addPrizeBtn.addEventListener("click", () => {
 drawForm.addEventListener("submit", async (event) => {
   event.preventDefault();
   const { prizes, total } = updatePrizeSum();
- if (Math.abs(total - 1) > 0.0001) {
-  alert("中奖概率合计必须等于 1");
-  return;
-}
-const cleaned = prizes.filter((p) => p.name).map((p) => {
-  const qty = Number.isFinite(p.qty) && p.qty > 0 ? Math.floor(p.qty) : null;
-  return {
-    name: p.name,
-    weight: Number(p.prob || 0),
-    qty,
-  };
-});
-
+  if (Math.abs(total - 1) > 0.0001) {
+    alert("中奖概率合计必须等于 1");
+    return;
+  }
+  const cleaned = prizes.filter((p) => p.name).map((p) => {
+    const qty = Number.isFinite(p.qty) && p.qty > 0 ? Math.floor(p.qty) : null;
+    return {
+      name: p.name,
+      weight: Number(p.prob || 0),
+      qty,
+    };
+  });
   const payload = {
     winRate: 1,
     prizes: cleaned,
@@ -176,5 +183,17 @@ const cleaned = prizes.filter((p) => p.name).map((p) => {
   alert("已保存");
 });
 
+const autoLogin = async () => {
+  if (!getToken()) return;
+  try {
+    loginSection.classList.add("hidden");
+    dashboard.classList.remove("hidden");
+    await loadDashboard();
+  } catch (err) {
+    clearToken();
+    dashboard.classList.add("hidden");
+    loginSection.classList.remove("hidden");
+  }
+};
 
-
+autoLogin();
