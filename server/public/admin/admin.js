@@ -29,15 +29,19 @@ const api = async (url, options = {}) => {
 const normalizePrize = (prize) => ({
   name: prize?.name || "",
   prob: Number(prize?.prob ?? prize?.weight ?? 0),
+  qty: prize?.qty ?? "",
 });
+
 
 const getPrizeRows = () => {
   const rows = Array.from(prizeList.querySelectorAll(".prize-item"));
   return rows.map((row) => {
     const name = row.querySelector("input[name='prizeName']").value.trim();
     const prob = Number(row.querySelector("input[name='prizeProb']").value || 0);
-    return { name, prob };
-  });
+    const qtyRaw = row.querySelector("input[name='prizeQty']").value.trim();
+    const qty = qtyRaw === "" ? null : Number(qtyRaw);
+  return { name, prob, qty };
+};
 };
 
 const updatePrizeSum = () => {
@@ -54,8 +58,10 @@ const renderPrizes = (prizes) => {
     item.className = "prize-item";
     item.innerHTML = `
       <input name="prizeName" placeholder="奖品名称" value="${prize.name}" />
-      <input name="prizeProb" type="number" min="0" max="1" step="0.01" value="${prize.prob}" />
+      <input name="prizeProb" type="number" min="0" max="1" step="0.01" placeholder="中奖概率(0-1)" value="${prize.prob}" />
+      <input name="prizeQty" type="number" min="1" step="1" placeholder="奖品数量(可空)" value="${prize.qty ?? ""}" />
       <button type="button" class="ghost" data-index="${index}">删除</button>
+
     `;
     item.querySelector("button").addEventListener("click", () => {
       const current = getPrizeRows();
@@ -64,6 +70,7 @@ const renderPrizes = (prizes) => {
     });
     item.querySelector("input[name='prizeName']").addEventListener("input", updatePrizeSum);
     item.querySelector("input[name='prizeProb']").addEventListener("input", updatePrizeSum);
+    item.querySelector("input[name='prizeQty']").addEventListener("input", updatePrizeSum);
     prizeList.appendChild(item);
   });
   updatePrizeSum();
@@ -138,7 +145,7 @@ createExhibitionForm.addEventListener("submit", async (event) => {
 
 addPrizeBtn.addEventListener("click", () => {
   const current = getPrizeRows();
-  current.push({ name: "", prob: 0 });
+  current.push({ name: "", prob: 0, qty: null });
   renderPrizes(current);
 });
 
@@ -149,10 +156,15 @@ drawForm.addEventListener("submit", async (event) => {
   alert("中奖概率合计必须等于 1");
   return;
 }
-  const cleaned = prizes.filter((p) => p.name).map((p) => ({
+const cleaned = prizes.filter((p) => p.name).map((p) => {
+  const qty = Number.isFinite(p.qty) && p.qty > 0 ? Math.floor(p.qty) : null;
+  return {
     name: p.name,
     weight: Number(p.prob || 0),
-  }));
+    qty,
+  };
+});
+
   const payload = {
     winRate: 1,
     prizes: cleaned,
@@ -163,4 +175,5 @@ drawForm.addEventListener("submit", async (event) => {
   });
   alert("已保存");
 });
+
 
