@@ -1,11 +1,25 @@
-﻿{
-  "miniprogramRoot": "./",
-  "projectname": "expo-checkin",
-  "description": "展会打卡系统",
-  "appid": "",
+{
   "setting": {
-    "urlCheck": true,
     "es6": true,
-    "postcss": true
-  }
+    "postcss": true,
+    "minified": true,
+    "uglifyFileName": false,
+    "enhance": true,
+    "packNpmRelationList": [],
+    "babelSetting": {
+      "ignore": [],
+      "disablePlugins": [],
+      "outputPath": ""
+    },
+    "useCompilerPlugins": false,
+    "minifyWXML": true
+  },
+  "compileType": "miniprogram",
+  "simulatorPluginLibVersion": {},
+  "packOptions": {
+    "ignore": [],
+    "include": []
+  },
+  "appid": "wx1bcefab6b430f5fe",
+  "editorSetting": {}
 }

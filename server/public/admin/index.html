@@ -22,11 +22,6 @@
           </label>
           <button type="submit">登录</button>
         </form>
-        <div class="qr-block">
-          <p class="muted">扫码进入后台登录页面</p>
-          <img src="/admin/qr.png" alt="后台二维码" class="qr" />
-          <p class="muted">若二维码为空，请先配置 `PUBLIC_BASE_URL` 并重启后端</p>
-        </div>
         <p class="error" id="loginError"></p>
       </section>
 
@@ -52,7 +47,10 @@
                 <h4 id="statWinners">0</h4>
               </div>
             </div>
-            <button id="exportBtn">导出 Excel</button>
+            <div class="row">
+              <button id="exportBtn">导出 Excel</button>
+              <button id="previewBtn" class="ghost" type="button">预览抽奖结果</button>
+            </div>
           </article>
 
           <article class="card">
@@ -68,16 +66,16 @@
             <h3>抽奖设置</h3>
             <form id="drawForm">
               <label>
-                总中奖概率 (0-1)
-                <input name="winRate" type="number" min="0" max="1" step="0.01" />
+                奖品列表
+                <div class="prize-list" id="prizeList"></div>
               </label>
-              <label>
-                奖品列表 (JSON 数组)
-                <textarea name="prizes" rows="6" placeholder='[{"name":"礼品A","weight":1}]'></textarea>
-              </label>
+              <button type="button" class="ghost" id="addPrizeBtn">添加奖品</button>
+              <p class="muted" id="prizeSum">已配置中奖概率合计：0</p>
+              <p class="muted">奖品数量为空表示不限数量</p>
+
               <button type="submit">保存设置</button>
             </form>
-            <p class="muted">权重用于已中奖用户的奖品分配</p>
+            <p class="muted">单个奖品概率相加必须等于 1</p>
           </article>
         </div>
       </section>

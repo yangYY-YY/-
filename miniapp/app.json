@@ -1,9 +1,10 @@
-﻿{
+{
   "pages": [
     "pages/checkin/index",
     "pages/success/index",
     "pages/history/index",
-    "pages/mine/index"
+    "pages/mine/index",
+    "pages/admin/index"
   ],
   "window": {
     "navigationBarTitleText": "展会打卡系统",

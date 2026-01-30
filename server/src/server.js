@@ -7,6 +7,7 @@ import morgan from "morgan";
 import path from "path";
 import { fileURLToPath } from "url";
 import QRCode from "qrcode";
+import crypto from "crypto";
 import db from "./db.js";
 import {
   ensureActiveExhibition,
@@ -23,6 +24,7 @@ import {
   updateDrawSettings,
   exportExhibitionExcel,
   getAdminSummary,
+  getDrawPreview,
 } from "./services.js";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -47,7 +49,43 @@ app.use(
 
 app.use("/admin", express.static(path.join(__dirname, "..", "public", "admin")));
 
+const tokenSecret = process.env.SESSION_SECRET || "change_this_secret";
+const tokenTtlMs = 12 * 60 * 60 * 1000;
+
+const createToken = (username) => {
+  const payload = { u: username, exp: Date.now() + tokenTtlMs };
+  const body = Buffer.from(JSON.stringify(payload)).toString("base64url");
+  const sig = crypto.createHmac("sha256", tokenSecret).update(body).digest("base64url");
+  return `${body}.${sig}`;
+};
+
+const verifyToken = (token) => {
+  const parts = token.split(".");
+  if (parts.length !== 2) return null;
+  const [body, sig] = parts;
+  const expected = crypto.createHmac("sha256", tokenSecret).update(body).digest("base64url");
+  if (expected.length !== sig.length || !crypto.timingSafeEqual(Buffer.from(expected), Buffer.from(sig))) {
+    return null;
+  }
+  try {
+    const payload = JSON.parse(Buffer.from(body, "base64url").toString("utf8"));
+    if (!payload.exp || Date.now() > payload.exp) return null;
+    return payload;
+  } catch {
+    return null;
+  }
+};
+
 const requireAdmin = (req, res, next) => {
+  const auth = req.headers.authorization || "";
+  if (auth.startsWith("Bearer ")) {
+    const token = auth.slice(7);
+    if (verifyToken(token)) return next();
+  }
+  const queryToken = req.query?.token || req.query?.t;
+  if (typeof queryToken === "string" && verifyToken(queryToken)) {
+    return next();
+  }
   if (req.session?.isAdmin) return next();
   res.status(401).json({ error: "unauthorized" });
 };
@@ -88,7 +126,8 @@ app.post("/api/admin/login", (req, res) => {
 
   if (username === process.env.ADMIN_USERNAME && password === process.env.ADMIN_PASSWORD) {
     req.session.isAdmin = true;
-    return res.json({ ok: true });
+    const token = createToken(username);
+    return res.json({ ok: true, token });
   }
 
   res.status(401).json({ error: "invalid" });
@@ -100,6 +139,11 @@ app.post("/api/admin/logout", (req, res) => {
 
 app.get("/api/admin/summary", requireAdmin, (req, res) => {
   res.json(getAdminSummary());
+});
+
+app.get("/api/admin/draw-preview", requireAdmin, (req, res) => {
+  const limit = Number(req.query.limit || 50);
+  res.json(getDrawPreview(Number.isFinite(limit) ? Math.min(Math.max(limit, 1), 200) : 50));
 });
 
 app.get("/api/admin/exhibitions", requireAdmin, (req, res) => {
@@ -138,6 +182,16 @@ app.get("/api/admin/export", requireAdmin, async (req, res) => {
 
 app.get("/api/public/active", (req, res) => {
   res.json(getActiveExhibition());
+});
+
+app.get("/api/public/draw-settings", (req, res) => {
+  const settings = getDrawSettings();
+  res.json({ prizes: settings.prizes || [], winRate: settings.winRate || 0 });
+});
+
+app.get("/api/public/draw-settings", (req, res) => {
+  const settings = getDrawSettings();
+  res.json({ prizes: settings.prizes || [], winRate: settings.winRate || 0 });
 });
 
 app.post("/api/public/checkin", (req, res) => {

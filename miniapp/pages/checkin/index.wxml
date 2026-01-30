@@ -14,5 +14,8 @@
 
     <view class="button" bindtap="submit">提交打卡</view>
     <view class="muted">当前展会：{{activeExhibition.name}}</view>
+    <view class="muted" wx:if="{{lastDrawResult}}">抽奖结果：{{lastDrawResult}}</view>
   </view>
+
+  <view class="admin-fab" bindtap="openAdmin">后台</view>
 </view>

@@ -74,7 +74,13 @@ export const getDrawSettings = () => {
 
 export const updateDrawSettings = ({ winRate, prizes }) => {
   const normalizedWinRate = Math.max(0, Math.min(1, Number(winRate || 0)));
-  const cleanPrizes = Array.isArray(prizes) ? prizes : [];
+  const cleanPrizes = Array.isArray(prizes)
+    ? prizes.map((p) => ({
+        name: p?.name || "",
+        weight: Number(p?.weight || 0),
+        qty: Number.isFinite(p?.qty) && p.qty > 0 ? Math.floor(p.qty) : null,
+      }))
+    : [];
   const value = JSON.stringify({ winRate: normalizedWinRate, prizes: cleanPrizes });
   db.prepare("UPDATE settings SET value = ? WHERE key = ?").run(value, "draw");
   return { winRate: normalizedWinRate, prizes: cleanPrizes };
@@ -97,8 +103,22 @@ export const recordDraw = (exhibitionId, phone, settings) => {
   let result = "未中奖";
 
   if (isWin) {
-    const prize = pickPrize(settings.prizes || []);
-    result = prize?.name || "未配置奖品";
+    const configured = settings.prizes || [];
+    const available = configured.filter((prize) => {
+      if (!Number.isFinite(prize.qty) || prize.qty === null) return true;
+      const row = db
+        .prepare(
+          "SELECT COUNT(*) AS count FROM draw_records WHERE exhibition_id = ? AND result = ? AND is_win = 1"
+        )
+        .get(exhibitionId, prize.name);
+      return row.count < prize.qty;
+    });
+    const prize = pickPrize(available);
+    if (!prize) {
+      result = "未中奖";
+    } else {
+      result = prize.name;
+    }
   }
 
   const drawTime = nowIso();
@@ -153,4 +173,17 @@ export const getAdminSummary = () => {
     checkins: countRow.count,
     winners: drawRow.count,
   };
+};
+
+export const getDrawPreview = (limit = 50) => {
+  const active = getActiveExhibition();
+  return db
+    .prepare(
+      `SELECT phone, result, draw_time
+       FROM draw_records
+       WHERE exhibition_id = ?
+       ORDER BY draw_time DESC
+       LIMIT ?`
+    )
+    .all(active.id, limit);
 };

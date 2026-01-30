@@ -1,0 +1,7 @@
+﻿<view class="container">
+  <view class="card">
+    <view class="label">后台入口</view>
+    <view class="muted">如无法打开，请先在小程序后台配置业务域名</view>
+  </view>
+  <web-view src="{{adminUrl}}"></web-view>
+</view>

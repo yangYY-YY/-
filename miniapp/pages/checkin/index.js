@@ -1,6 +1,7 @@
 ﻿Page({
   data: {
-    activeExhibition: {},
+    activeExhibition: { name: "未设置" },
+    lastDrawResult: "未抽奖",
     form: {
       companyName: "",
       signerName: "",
@@ -12,12 +13,25 @@
     this.loadActive();
     this.detectLocation();
   },
-  async loadActive() {
+  onShow() {
+    const result = wx.getStorageSync("lastDrawResult") || "";
+    this.setData({ lastDrawResult: result || "未抽奖" });
+  },
+  loadActive() {
     const app = getApp();
-    const res = await wx.request({
-      url: `${app.globalData.apiBase}/api/public/active`
+    wx.request({
+      url: `${app.globalData.apiBase}/api/public/active`,
+      success: (res) => {
+        if (res && res.data && res.data.name) {
+          this.setData({ activeExhibition: res.data });
+        } else {
+          this.setData({ activeExhibition: { name: "未设置" } });
+        }
+      },
+      fail: () => {
+        this.setData({ activeExhibition: { name: "未设置" } });
+      }
     });
-    this.setData({ activeExhibition: res.data });
   },
   onInput(e) {
     const field = e.currentTarget.dataset.field;
@@ -31,6 +45,9 @@
         this.setData({ "form.location": location });
       }
     });
+  },
+  openAdmin() {
+    wx.navigateTo({ url: "/pages/admin/index" });
   },
   async submit() {
     const { companyName, signerName, phone, location } = this.data.form;

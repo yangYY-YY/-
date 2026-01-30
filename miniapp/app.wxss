@@ -1,4 +1,4 @@
-﻿page {
+page {
   background: #f7f3ed;
   color: #2e4d3d;
   font-family: "STSong";
@@ -41,4 +41,25 @@
 .muted {
   color: #6c6258;
   font-size: 24rpx;
+}
+.button.ghost {
+  background: #ffffff;
+  color: #2e4d3d;
+  border: 2rpx solid #e3d8c9;
+}
+.admin-fab {
+  position: fixed;
+  top: 24rpx;
+  right: 24rpx;
+  width: 88rpx;
+  height: 88rpx;
+  border-radius: 50%;
+  background: #2e4d3d;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24rpx;
+  box-shadow: 0 16rpx 24rpx rgba(46, 77, 61, 0.25);
+  z-index: 999;
 }

@@ -2,7 +2,22 @@
   <view class="card">
     <view class="label">打卡成功</view>
     <view class="muted">仅首次打卡可抽奖</view>
-    <view class="button" bindtap="draw">立即抽奖</view>
-    <view class="muted">抽奖结果：{{result}}</view>
   </view>
+
+  <view class="wheel-wrap">
+    <view class="wheel" style="{{wheelStyle}}">
+      <view class="wheel-center"></view>
+      <view class="wheel-label" wx:for="{{labelStyles}}" wx:key="index" style="{{item.style}}">{{item.text}}</view>
+    </view>
+    <view class="wheel-pointer-wrap" style="{{pointerStyle}}">
+      <view class="wheel-pointer-rotator">
+        <view class="wheel-pointer-line"></view>
+        <view class="pointer-head"></view>
+        <view class="pointer-dot"></view>
+      </view>
+    </view>
+  </view>
+
+  <view class="button" bindtap="draw" disabled="{{spinning}}">{{spinning ? "抽奖中..." : "立即抽奖"}}</view>
+  <view class="muted">抽奖结果：{{result}}</view>
 </view>
