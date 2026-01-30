@@ -179,6 +179,11 @@ app.get("/api/public/draw-settings", (req, res) => {
   res.json({ prizes: settings.prizes || [], winRate: settings.winRate || 0 });
 });
 
+app.get("/api/public/draw-settings", (req, res) => {
+  const settings = getDrawSettings();
+  res.json({ prizes: settings.prizes || [], winRate: settings.winRate || 0 });
+});
+
 app.post("/api/public/checkin", (req, res) => {
   const { companyName, signerName, phone, location } = req.body || {};
   if (!companyName || !signerName || !phone || !location) {
