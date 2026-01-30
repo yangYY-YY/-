@@ -1,1 +1,27 @@
+.wheel-wrap {
+  width: 300px;
+  height: 300px;
+  margin: 16px auto 24px;
+  position: relative;
+}
+
+.wheel-canvas {
+  width: 300px;
+  height: 300px;
+  border-radius: 50%;
+  overflow: hidden;
+}
+
+.wheel-pointer {
+  position: absolute;
+  top: -4px;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-left: 10px solid transparent;
+  border-right: 10px solid transparent;
+  border-bottom: 18px solid #2e4d3d;
+  transform: translateX(-50%);
+}
 ﻿
+
