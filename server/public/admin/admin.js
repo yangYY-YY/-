@@ -43,7 +43,6 @@ const getPrizeRows = () => {
 const updatePrizeSum = () => {
   const prizes = getPrizeRows();
   const total = prizes.reduce((sum, p) => sum + (Number(p.prob) || 0), 0);
-  drawForm.winRate.value = total.toFixed(2);
   prizeSum.textContent = `已配置中奖概率合计：${total.toFixed(2)}`;
   return { prizes, total };
 };
@@ -146,16 +145,16 @@ addPrizeBtn.addEventListener("click", () => {
 drawForm.addEventListener("submit", async (event) => {
   event.preventDefault();
   const { prizes, total } = updatePrizeSum();
-  if (total > 1) {
-    alert("中奖概率合计不能超过 1");
-    return;
-  }
+ if (Math.abs(total - 1) > 0.0001) {
+  alert("中奖概率合计必须等于 1");
+  return;
+}
   const cleaned = prizes.filter((p) => p.name).map((p) => ({
     name: p.name,
     weight: Number(p.prob || 0),
   }));
   const payload = {
-    winRate: Number(total.toFixed(2)),
+    winRate: 1,
     prizes: cleaned,
   };
   await api("/api/admin/draw", {
@@ -164,3 +163,4 @@ drawForm.addEventListener("submit", async (event) => {
   });
   alert("已保存");
 });
+
