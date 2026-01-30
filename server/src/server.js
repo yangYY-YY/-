@@ -1,4 +1,4 @@
-﻿import dotenv from "dotenv";
+import dotenv from "dotenv";
 dotenv.config();
 
 import express from "express";
@@ -30,6 +30,24 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
+
+app.set("trust proxy", 1);
+
+app.use(morgan("dev"));
+app.use(express.json({ limit: "1mb" }));
+app.use(express.urlencoded({ extended: true }));
+
+app.use(
+  session({
+    secret: process.env.SESSION_SECRET || "change_this_secret",
+    resave: false,
+    saveUninitialized: false,
+    cookie: { maxAge: 8 * 60 * 60 * 1000 },
+  })
+);
+
+app.use("/admin", express.static(path.join(__dirname, "..", "public", "admin")));
+
 const tokenSecret = process.env.SESSION_SECRET || "change_this_secret";
 const tokenTtlMs = 12 * 60 * 60 * 1000;
 
@@ -57,22 +75,6 @@ const verifyToken = (token) => {
   }
 };
 
-app.set("trust proxy", 1);
-app.use(morgan("dev"));
-app.use(express.json({ limit: "1mb" }));
-app.use(express.urlencoded({ extended: true }));
-
-app.use(
-  session({
-    secret: process.env.SESSION_SECRET || "change_this_secret",
-    resave: false,
-    saveUninitialized: false,
-    cookie: { maxAge: 8 * 60 * 60 * 1000 },
-  })
-);
-
-app.use("/admin", express.static(path.join(__dirname, "..", "public", "admin")));
-
 const requireAdmin = (req, res, next) => {
   const auth = req.headers.authorization || "";
   if (auth.startsWith("Bearer ")) {
@@ -89,7 +91,6 @@ const getBaseUrl = (req) => {
   const proto = (forwarded || req.protocol || "http").split(",")[0].trim();
   return `${proto}://${req.get("host")}`;
 };
-
 
 const ensureQrImage = async () => {
   const baseUrl = process.env.PUBLIC_BASE_URL;
@@ -120,7 +121,8 @@ app.post("/api/admin/login", (req, res) => {
 
   if (username === process.env.ADMIN_USERNAME && password === process.env.ADMIN_PASSWORD) {
     req.session.isAdmin = true;
-    return res.json({ ok: true });
+    const token = createToken(username);
+    return res.json({ ok: true, token });
   }
 
   res.status(401).json({ error: "invalid" });
@@ -170,6 +172,11 @@ app.get("/api/admin/export", requireAdmin, async (req, res) => {
 
 app.get("/api/public/active", (req, res) => {
   res.json(getActiveExhibition());
+});
+
+app.get("/api/public/draw-settings", (req, res) => {
+  const settings = getDrawSettings();
+  res.json({ prizes: settings.prizes || [], winRate: settings.winRate || 0 });
 });
 
 app.post("/api/public/checkin", (req, res) => {
@@ -225,6 +232,3 @@ const start = async () => {
 };
 
 start();
-
-
-
