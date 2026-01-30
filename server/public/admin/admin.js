@@ -1,4 +1,4 @@
-﻿const loginSection = document.getElementById("login");
+const loginSection = document.getElementById("login");
 const dashboard = document.getElementById("dashboard");
 const loginForm = document.getElementById("loginForm");
 const loginError = document.getElementById("loginError");
@@ -10,6 +10,9 @@ const activeExhibition = document.getElementById("activeExhibition");
 const statCheckins = document.getElementById("statCheckins");
 const statWinners = document.getElementById("statWinners");
 const drawForm = document.getElementById("drawForm");
+const prizeList = document.getElementById("prizeList");
+const addPrizeBtn = document.getElementById("addPrizeBtn");
+const prizeSum = document.getElementById("prizeSum");
 
 const api = async (url, options = {}) => {
   const res = await fetch(url, {
@@ -23,6 +26,50 @@ const api = async (url, options = {}) => {
   return res.json();
 };
 
+const normalizePrize = (prize) => ({
+  name: prize?.name || "",
+  prob: Number(prize?.prob ?? prize?.weight ?? 0),
+});
+
+const getPrizeRows = () => {
+  const rows = Array.from(prizeList.querySelectorAll(".prize-item"));
+  return rows.map((row) => {
+    const name = row.querySelector("input[name='prizeName']").value.trim();
+    const prob = Number(row.querySelector("input[name='prizeProb']").value || 0);
+    return { name, prob };
+  });
+};
+
+const updatePrizeSum = () => {
+  const prizes = getPrizeRows();
+  const total = prizes.reduce((sum, p) => sum + (Number(p.prob) || 0), 0);
+  drawForm.winRate.value = total.toFixed(2);
+  prizeSum.textContent = `已配置中奖概率合计：${total.toFixed(2)}`;
+  return { prizes, total };
+};
+
+const renderPrizes = (prizes) => {
+  prizeList.innerHTML = "";
+  prizes.forEach((prize, index) => {
+    const item = document.createElement("div");
+    item.className = "prize-item";
+    item.innerHTML = `
+      <input name="prizeName" placeholder="奖品名称" value="${prize.name}" />
+      <input name="prizeProb" type="number" min="0" max="1" step="0.01" value="${prize.prob}" />
+      <button type="button" class="ghost" data-index="${index}">删除</button>
+    `;
+    item.querySelector("button").addEventListener("click", () => {
+      const current = getPrizeRows();
+      current.splice(index, 1);
+      renderPrizes(current);
+    });
+    item.querySelector("input[name='prizeName']").addEventListener("input", updatePrizeSum);
+    item.querySelector("input[name='prizeProb']").addEventListener("input", updatePrizeSum);
+    prizeList.appendChild(item);
+  });
+  updatePrizeSum();
+};
+
 const loadDashboard = async () => {
   const summary = await api("/api/admin/summary");
   const exhibitions = await api("/api/admin/exhibitions");
@@ -32,8 +79,8 @@ const loadDashboard = async () => {
   statCheckins.textContent = summary.checkins;
   statWinners.textContent = summary.winners;
 
-  drawForm.winRate.value = draw.winRate;
-  drawForm.prizes.value = JSON.stringify(draw.prizes, null, 2);
+  const prizes = (draw.prizes || []).map(normalizePrize);
+  renderPrizes(prizes);
 
   exhibitionList.innerHTML = "";
   exhibitions.forEach((exhibition) => {
@@ -90,18 +137,26 @@ createExhibitionForm.addEventListener("submit", async (event) => {
   loadDashboard();
 });
 
+addPrizeBtn.addEventListener("click", () => {
+  const current = getPrizeRows();
+  current.push({ name: "", prob: 0 });
+  renderPrizes(current);
+});
+
 drawForm.addEventListener("submit", async (event) => {
   event.preventDefault();
-  let prizes = [];
-  try {
-    prizes = JSON.parse(drawForm.prizes.value || "[]");
-  } catch (err) {
-    alert("奖品 JSON 格式不正确");
+  const { prizes, total } = updatePrizeSum();
+  if (total > 1) {
+    alert("中奖概率合计不能超过 1");
     return;
   }
+  const cleaned = prizes.filter((p) => p.name).map((p) => ({
+    name: p.name,
+    weight: Number(p.prob || 0),
+  }));
   const payload = {
-    winRate: Number(drawForm.winRate.value),
-    prizes,
+    winRate: Number(total.toFixed(2)),
+    prizes: cleaned,
   };
   await api("/api/admin/draw", {
     method: "POST",
