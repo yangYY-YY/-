@@ -15,6 +15,7 @@ import {
   listExhibitions,
   createExhibition,
   setActiveExhibition,
+  deleteExhibition,
   insertCheckin,
   getHistoryByPhone,
   getMyCheckins,
@@ -170,6 +171,17 @@ app.post("/api/admin/exhibitions/:id/activate", requireAdmin, (req, res) => {
   const id = Number(req.params.id);
   if (!id) return res.status(400).json({ error: "invalid" });
   res.json(setActiveExhibition(id));
+});
+
+app.delete("/api/admin/exhibitions/:id", requireAdmin, (req, res) => {
+  const id = Number(req.params.id);
+  if (!id) return res.status(400).json({ error: "invalid" });
+  const force = req.query.force === "1";
+  const result = deleteExhibition(id, force);
+  if (result.ok) return res.json(result);
+  if (result.error === "active") return res.status(400).json({ error: "active" });
+  if (result.error === "has_data") return res.status(409).json({ error: "has_data" });
+  return res.status(404).json({ error: "not_found" });
 });
 
 app.get("/api/admin/draw", requireAdmin, (req, res) => {
