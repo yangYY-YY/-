@@ -47,7 +47,10 @@
                 <h4 id="statWinners">0</h4>
               </div>
             </div>
-            <button id="exportBtn">导出 Excel</button>
+            <div class="row">
+              <button id="exportBtn">导出 Excel</button>
+              <button id="previewBtn" class="ghost" type="button">预览抽奖结果</button>
+            </div>
           </article>
 
           <article class="card">
@@ -63,17 +66,16 @@
             <h3>抽奖设置</h3>
             <form id="drawForm">
               <label>
-
-              <label>
                 奖品列表
                 <div class="prize-list" id="prizeList"></div>
               </label>
               <button type="button" class="ghost" id="addPrizeBtn">添加奖品</button>
               <p class="muted" id="prizeSum">已配置中奖概率合计：0</p>
+              <p class="muted">奖品数量为空表示不限数量</p>
 
               <button type="submit">保存设置</button>
             </form>
-            <p class="muted">单个奖品概率相加 = 总中奖概率</p>
+            <p class="muted">单个奖品概率相加必须等于 1</p>
           </article>
         </div>
       </section>
@@ -81,4 +83,3 @@
     <script src="./admin.js"></script>
   </body>
 </html>
-
