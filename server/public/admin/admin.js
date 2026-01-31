@@ -171,7 +171,7 @@ previewBtn.addEventListener("click", async () => {
       const tr = document.createElement("tr");
       const tdName = document.createElement("td");
       const tdResult = document.createElement("td");
-      tdName.textContent = item.phone || "";
+      tdName.textContent = item.name || item.phone || "";
       tdResult.textContent = item.result || "";
       tr.appendChild(tdName);
       tr.appendChild(tdResult);
