@@ -180,7 +180,9 @@ export const getDrawPreview = (limit = 50) => {
   const active = getActiveExhibition();
   return db
     .prepare(
-      `SELECT phone, result, draw_time
+      `SELECT phone,
+        (SELECT signer_name FROM checkins c WHERE c.exhibition_id = d.exhibition_id AND c.phone = d.phone ORDER BY c.checkin_time ASC LIMIT 1) AS name,
+        result, draw_time
        FROM draw_records
        WHERE exhibition_id = ?
        ORDER BY draw_time DESC
@@ -193,6 +195,7 @@ export const exportDrawExcel = async (exhibitionId) => {
   const workbook = new ExcelJS.Workbook();
   const sheet = workbook.addWorksheet("draws");
   sheet.columns = [
+    { header: "姓名", key: "name", width: 16 },
     { header: "手机号", key: "phone", width: 16 },
     { header: "抽奖结果", key: "result", width: 20 },
     { header: "抽奖时间", key: "draw_time", width: 22 },
@@ -200,7 +203,9 @@ export const exportDrawExcel = async (exhibitionId) => {
 
   const rows = db
     .prepare(
-      `SELECT phone, result, draw_time
+      `SELECT phone,
+        (SELECT signer_name FROM checkins c WHERE c.exhibition_id = d.exhibition_id AND c.phone = d.phone ORDER BY c.checkin_time ASC LIMIT 1) AS name,
+        result, draw_time
        FROM draw_records
        WHERE exhibition_id = ?
        ORDER BY draw_time DESC`
