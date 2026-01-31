@@ -1,5 +1,9 @@
-﻿<view class="container">
-  <view class="card">
+<view class="container checkin-page">
+  <image class="checkin-bg" src="../../assets/draw-bg.jpg" mode="aspectFill" />
+  <view class="checkin-overlay"></view>
+
+  <view class="checkin-card">
+    <image class="checkin-title" src="../../assets/title.png" mode="widthFix" />
     <view class="label">公司名称</view>
     <input class="input" placeholder="XXX公司" value="{{form.companyName}}" bindinput="onInput" data-field="companyName" />
 

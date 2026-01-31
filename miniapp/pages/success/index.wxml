@@ -1,8 +1,6 @@
-﻿<view class="container">
-  <view class="card">
-    <view class="label">打卡成功</view>
-    <view class="muted">仅首次打卡可抽奖</view>
-  </view>
+<view class="container">
+  <view class="label">打卡成功</view>
+  <view class="muted">仅首次打卡可抽奖</view>
 
   <view class="wheel-wrap">
     <view class="wheel" style="{{wheelStyle}}">
