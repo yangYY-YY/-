@@ -5,8 +5,13 @@ const loginError = document.getElementById("loginError");
 const logoutBtn = document.getElementById("logoutBtn");
 const exportBtn = document.getElementById("exportBtn");
 const previewBtn = document.getElementById("previewBtn");
+const previewModal = document.getElementById("previewModal");
+const previewClose = document.getElementById("previewClose");
+const previewBody = document.getElementById("previewBody");
 const createExhibitionForm = document.getElementById("createExhibitionForm");
 const exhibitionList = document.getElementById("exhibitionList");
+const otherExhibitionList = document.getElementById("otherExhibitionList");
+const toggleOthers = document.getElementById("toggleOthers");
 const activeExhibition = document.getElementById("activeExhibition");
 const statCheckins = document.getElementById("statCheckins");
 const statWinners = document.getElementById("statWinners");
@@ -96,7 +101,12 @@ const loadDashboard = async () => {
   renderPrizes(prizes);
 
   exhibitionList.innerHTML = "";
-  exhibitions.forEach((exhibition) => {
+  otherExhibitionList.innerHTML = "";
+
+  const active = exhibitions.find((e) => e.is_active);
+  const others = exhibitions.filter((e) => !e.is_active);
+
+  const renderExhibitionItem = (exhibition, container) => {
     const item = document.createElement("div");
     item.className = "exhibition-item";
     item.innerHTML = `<span>${exhibition.name}</span>`;
@@ -108,8 +118,13 @@ const loadDashboard = async () => {
       loadDashboard();
     });
     item.appendChild(button);
-    exhibitionList.appendChild(item);
-  });
+    container.appendChild(item);
+  };
+
+  if (active) {
+    renderExhibitionItem(active, exhibitionList);
+  }
+  others.forEach((exhibition) => renderExhibitionItem(exhibition, otherExhibitionList));
 };
 
 loginForm.addEventListener("submit", async (event) => {
@@ -150,15 +165,30 @@ previewBtn.addEventListener("click", async () => {
       alert("暂无抽奖记录");
       return;
     }
-    const lines = list.map((item, idx) => {
-      const time = item.draw_time || "";
-      const phone = item.phone || "";
-      const result = item.result || "";
-      return `${idx + 1}. ${phone} - ${result} ${time}`;
+    previewBody.innerHTML = "";
+    list.forEach((item) => {
+      const tr = document.createElement("tr");
+      const tdName = document.createElement("td");
+      const tdResult = document.createElement("td");
+      tdName.textContent = item.phone || "";
+      tdResult.textContent = item.result || "";
+      tr.appendChild(tdName);
+      tr.appendChild(tdResult);
+      previewBody.appendChild(tr);
     });
-    alert(lines.join("\n"));
+    previewModal.classList.remove("hidden");
   } catch (err) {
     alert("获取抽奖结果失败");
+  }
+});
+
+previewClose.addEventListener("click", () => {
+  previewModal.classList.add("hidden");
+});
+
+previewModal.addEventListener("click", (event) => {
+  if (event.target === previewModal) {
+    previewModal.classList.add("hidden");
   }
 });
 
@@ -219,3 +249,7 @@ const autoLogin = async () => {
 };
 
 autoLogin();
+
+toggleOthers.addEventListener("change", () => {
+  otherExhibitionList.classList.toggle("hidden", !toggleOthers.checked);
+});
