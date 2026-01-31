@@ -49,7 +49,7 @@
             </div>
             <div class="row">
               <button id="exportBtn">导出 Excel</button>
-              <button id="previewBtn" class="ghost" type="button">预览抽奖结果</button>
+              <button id="previewBtn" class="ghost" type="button">查看抽奖结果</button>
             </div>
           </article>
 
@@ -89,8 +89,11 @@
     <div class="modal hidden" id="previewModal">
       <div class="modal-card">
         <header>
-          <h3>抽奖结果预览</h3>
-          <button type="button" class="ghost" id="previewClose">关闭</button>
+          <h3>抽奖结果</h3>
+          <div class="row">
+            <button type="button" class="ghost" id="previewExport">导出</button>
+            <button type="button" class="ghost" id="previewClose">关闭</button>
+          </div>
         </header>
         <div class="table-wrap">
           <table class="preview-table">
