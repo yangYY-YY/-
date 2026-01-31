@@ -7,6 +7,7 @@ const exportBtn = document.getElementById("exportBtn");
 const previewBtn = document.getElementById("previewBtn");
 const previewModal = document.getElementById("previewModal");
 const previewClose = document.getElementById("previewClose");
+const previewExport = document.getElementById("previewExport");
 const previewBody = document.getElementById("previewBody");
 const createExhibitionForm = document.getElementById("createExhibitionForm");
 const exhibitionList = document.getElementById("exhibitionList");
@@ -72,7 +73,7 @@ const renderPrizes = (prizes) => {
     item.innerHTML = `
       <input name="prizeName" placeholder="奖品名称" value="${prize.name}" />
       <input name="prizeProb" type="number" min="0" max="1" step="0.01" placeholder="中奖概率(0-1)" value="${prize.prob}" />
-      <input name="prizeQty" type="number" min="1" step="1" placeholder="奖品数量(可空)" value="${prize.qty ?? ""}" />
+      <input name="prizeQty" type="number" min="0" step="1" placeholder="奖品数量(可空)" value="${prize.qty ?? ""}" />
       <button type="button" class="ghost" data-index="${index}">删除</button>
     `;
     item.querySelector("button").addEventListener("click", () => {
@@ -192,6 +193,13 @@ previewModal.addEventListener("click", (event) => {
   }
 });
 
+previewExport.addEventListener("click", () => {
+  const token = getToken();
+  const url = token ? `/api/admin/draw-export?token=${encodeURIComponent(token)}` : "/api/admin/draw-export";
+  window.location.href = url;
+  alert("已开始下载，若无提示请在浏览器下载记录中查看");
+});
+
 createExhibitionForm.addEventListener("submit", async (event) => {
   event.preventDefault();
   const payload = Object.fromEntries(new FormData(createExhibitionForm));
@@ -217,7 +225,7 @@ drawForm.addEventListener("submit", async (event) => {
     return;
   }
   const cleaned = prizes.filter((p) => p.name).map((p) => {
-    const qty = Number.isFinite(p.qty) && p.qty > 0 ? Math.floor(p.qty) : null;
+    const qty = Number.isFinite(p.qty) && p.qty >= 0 ? Math.floor(p.qty) : null;
     return {
       name: p.name,
       weight: Number(p.prob || 0),
