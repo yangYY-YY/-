@@ -24,6 +24,7 @@ import {
   updateDrawSettings,
   exportExhibitionExcel,
   getAdminSummary,
+  getDrawPreview,
 } from "./services.js";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -81,6 +82,10 @@ const requireAdmin = (req, res, next) => {
     const token = auth.slice(7);
     if (verifyToken(token)) return next();
   }
+  const queryToken = req.query?.token || req.query?.t;
+  if (typeof queryToken === "string" && verifyToken(queryToken)) {
+    return next();
+  }
   if (req.session?.isAdmin) return next();
   res.status(401).json({ error: "unauthorized" });
 };
@@ -134,6 +139,11 @@ app.post("/api/admin/logout", (req, res) => {
 
 app.get("/api/admin/summary", requireAdmin, (req, res) => {
   res.json(getAdminSummary());
+});
+
+app.get("/api/admin/draw-preview", requireAdmin, (req, res) => {
+  const limit = Number(req.query.limit || 50);
+  res.json(getDrawPreview(Number.isFinite(limit) ? Math.min(Math.max(limit, 1), 200) : 50));
 });
 
 app.get("/api/admin/exhibitions", requireAdmin, (req, res) => {
