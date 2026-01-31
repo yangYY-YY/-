@@ -218,14 +218,14 @@ app.get("/api/public/draw-settings", (req, res) => {
 
 app.post("/api/public/checkin", (req, res) => {
   const { companyName, signerName, phone, location } = req.body || {};
-  if (!companyName || !signerName || !phone || !location) {
+  if (!companyName || !signerName || !phone) {
     return res.status(400).json({ error: "missing" });
   }
   if (!/^\d{11}$/.test(phone)) {
     return res.status(400).json({ error: "phone" });
   }
   const active = getActiveExhibition();
-  const record = insertCheckin(active.id, { companyName, signerName, phone, location });
+  const record = insertCheckin(active.id, { companyName, signerName, phone, location: location || "" });
   res.json(record);
 });
 
