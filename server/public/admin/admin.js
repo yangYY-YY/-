@@ -4,6 +4,7 @@ const loginForm = document.getElementById("loginForm");
 const loginError = document.getElementById("loginError");
 const logoutBtn = document.getElementById("logoutBtn");
 const exportBtn = document.getElementById("exportBtn");
+const previewBtn = document.getElementById("previewBtn");
 const createExhibitionForm = document.getElementById("createExhibitionForm");
 const exhibitionList = document.getElementById("exhibitionList");
 const activeExhibition = document.getElementById("activeExhibition");
@@ -137,7 +138,28 @@ logoutBtn.addEventListener("click", async () => {
 });
 
 exportBtn.addEventListener("click", () => {
-  window.location.href = "/api/admin/export";
+  const token = getToken();
+  const url = token ? `/api/admin/export?token=${encodeURIComponent(token)}` : "/api/admin/export";
+  window.location.href = url;
+});
+
+previewBtn.addEventListener("click", async () => {
+  try {
+    const list = await api("/api/admin/draw-preview?limit=50");
+    if (!list || !list.length) {
+      alert("暂无抽奖记录");
+      return;
+    }
+    const lines = list.map((item, idx) => {
+      const time = item.draw_time || "";
+      const phone = item.phone || "";
+      const result = item.result || "";
+      return `${idx + 1}. ${phone} - ${result} ${time}`;
+    });
+    alert(lines.join("\n"));
+  } catch (err) {
+    alert("获取抽奖结果失败");
+  }
 });
 
 createExhibitionForm.addEventListener("submit", async (event) => {
