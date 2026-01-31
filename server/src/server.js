@@ -25,6 +25,7 @@ import {
   exportExhibitionExcel,
   getAdminSummary,
   getDrawPreview,
+  exportDrawExcel,
 } from "./services.js";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -144,6 +145,15 @@ app.get("/api/admin/summary", requireAdmin, (req, res) => {
 app.get("/api/admin/draw-preview", requireAdmin, (req, res) => {
   const limit = Number(req.query.limit || 50);
   res.json(getDrawPreview(Number.isFinite(limit) ? Math.min(Math.max(limit, 1), 200) : 50));
+});
+
+app.get("/api/admin/draw-export", requireAdmin, async (req, res) => {
+  const active = getActiveExhibition();
+  const buffer = await exportDrawExcel(active.id);
+  const fileName = `draws_${active.id}.xlsx`;
+  res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+  res.setHeader("Content-Disposition", `attachment; filename=${fileName}`);
+  res.send(buffer);
 });
 
 app.get("/api/admin/exhibitions", requireAdmin, (req, res) => {
