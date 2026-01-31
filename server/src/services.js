@@ -36,6 +36,26 @@ export const setActiveExhibition = (id) => {
   return getActiveExhibition();
 };
 
+export const deleteExhibition = (id, force = false) => {
+  const exhibition = db.prepare("SELECT * FROM exhibitions WHERE id = ?").get(id);
+  if (!exhibition) return { ok: false, error: "not_found" };
+  if (exhibition.is_active) return { ok: false, error: "active" };
+
+  const countRow = db.prepare("SELECT COUNT(*) AS count FROM checkins WHERE exhibition_id = ?").get(id);
+  const hasData = countRow.count > 0;
+  if (hasData && !force) {
+    return { ok: false, error: "has_data" };
+  }
+
+  const tx = db.transaction(() => {
+    db.prepare("DELETE FROM draw_records WHERE exhibition_id = ?").run(id);
+    db.prepare("DELETE FROM checkins WHERE exhibition_id = ?").run(id);
+    db.prepare("DELETE FROM exhibitions WHERE id = ?").run(id);
+  });
+  tx();
+  return { ok: true, deleted: true };
+};
+
 export const insertCheckin = (exhibitionId, payload) => {
   const checkinTime = nowIso();
   const result = db
