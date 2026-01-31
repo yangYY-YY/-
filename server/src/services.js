@@ -203,8 +203,8 @@ export const getDrawPreview = (limit = 50) => {
       `SELECT phone,
         (SELECT signer_name FROM checkins c WHERE c.exhibition_id = d.exhibition_id AND c.phone = d.phone ORDER BY c.checkin_time ASC LIMIT 1) AS name,
         result, draw_time
-       FROM draw_records
-       WHERE exhibition_id = ?
+       FROM draw_records d
+       WHERE d.exhibition_id = ?
        ORDER BY draw_time DESC
        LIMIT ?`
     )
@@ -226,8 +226,8 @@ export const exportDrawExcel = async (exhibitionId) => {
       `SELECT phone,
         (SELECT signer_name FROM checkins c WHERE c.exhibition_id = d.exhibition_id AND c.phone = d.phone ORDER BY c.checkin_time ASC LIMIT 1) AS name,
         result, draw_time
-       FROM draw_records
-       WHERE exhibition_id = ?
+       FROM draw_records d
+       WHERE d.exhibition_id = ?
        ORDER BY draw_time DESC`
     )
     .all(exhibitionId);
