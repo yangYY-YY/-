@@ -60,6 +60,11 @@
               <button type="submit">创建</button>
             </form>
             <div id="exhibitionList"></div>
+            <label class="toggle">
+              <input type="checkbox" id="toggleOthers" />
+              其他展会
+            </label>
+            <div id="otherExhibitionList" class="hidden"></div>
           </article>
 
           <article class="card">
@@ -80,6 +85,26 @@
         </div>
       </section>
     </main>
+
+    <div class="modal hidden" id="previewModal">
+      <div class="modal-card">
+        <header>
+          <h3>抽奖结果预览</h3>
+          <button type="button" class="ghost" id="previewClose">关闭</button>
+        </header>
+        <div class="table-wrap">
+          <table class="preview-table">
+            <thead>
+              <tr>
+                <th>姓名/手机号</th>
+                <th>结果</th>
+              </tr>
+            </thead>
+            <tbody id="previewBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
     <script src="./admin.js"></script>
   </body>
 </html>
