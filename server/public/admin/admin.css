@@ -205,6 +205,17 @@ button.ghost {
   background: #fff;
 }
 
+.exhibition-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.danger {
+  border-color: #c55;
+  color: #c55;
+}
+
 .qr-block {
   margin-top: 16px;
   text-align: center;
