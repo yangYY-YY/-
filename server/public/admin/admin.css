@@ -83,6 +83,13 @@ button.ghost {
   margin-top: 12px;
   font-size: 14px;
   color: var(--muted);
+  white-space: nowrap;
+}
+
+.toggle-row {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
 }
 
 .error {
