@@ -1,4 +1,4 @@
-﻿:root {
+:root {
   --bg: #f4f1ec;
   --card: #fff9f0;
   --primary: #2e4d3d;
@@ -76,6 +76,15 @@ button.ghost {
   font-size: 13px;
 }
 
+.toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+  font-size: 14px;
+  color: var(--muted);
+}
+
 .error {
   color: #a83b3b;
   margin-top: 10px;
@@ -102,6 +111,64 @@ button.ghost {
   display: flex;
   gap: 10px;
   align-items: center;
+}
+
+.modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  z-index: 100;
+}
+
+.modal.hidden {
+  display: none;
+}
+
+.modal-card {
+  width: min(640px, 100%);
+  background: #fff6ea;
+  border-radius: 18px;
+  padding: 18px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
+}
+
+.modal-card header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.table-wrap {
+  max-height: 60vh;
+  overflow: auto;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: #fffaf2;
+}
+
+.preview-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.preview-table th,
+.preview-table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+}
+
+.preview-table thead th {
+  background: #f3e6d6;
+  position: sticky;
+  top: 0;
+  z-index: 1;
 }
 
 #exhibitionList {
@@ -147,7 +214,7 @@ button.ghost {
 
 .prize-item {
   display: grid;
-  grid-template-columns: 1.5fr 0.8fr auto;
+  grid-template-columns: 1.2fr 0.7fr 0.7fr auto;
   gap: 10px;
   align-items: center;
   padding: 10px;
@@ -169,4 +236,3 @@ button.ghost {
     grid-template-columns: 1fr;
   }
 }
-
