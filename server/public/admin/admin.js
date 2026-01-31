@@ -184,7 +184,14 @@ previewBtn.addEventListener("click", async () => {
     const url = token
       ? `/api/admin/draw-preview?limit=50&token=${encodeURIComponent(token)}`
       : "/api/admin/draw-preview?limit=50";
-    const res = await fetch(url, { headers: { "Content-Type": "application/json" } });
+    const res = await fetch(url, { headers: { "Content-Type": "application/json" }, credentials: "include" });
+    if (res.status === 401) {
+      clearToken();
+      alert("登录已失效，请重新登录");
+      loginSection.classList.remove("hidden");
+      dashboard.classList.add("hidden");
+      return;
+    }
     if (!res.ok) throw new Error("request failed");
     const list = await res.json();
     if (!list || !list.length) {
