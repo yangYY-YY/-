@@ -143,6 +143,17 @@ button.ghost {
   margin-bottom: 12px;
 }
 
+.modal-card header button {
+  margin-top: 0;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: nowrap;
+}
+
 .table-wrap {
   max-height: 60vh;
   overflow: auto;
