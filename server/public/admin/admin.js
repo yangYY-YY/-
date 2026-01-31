@@ -110,6 +110,9 @@ const loadDashboard = async () => {
     const item = document.createElement("div");
     item.className = "exhibition-item";
     item.innerHTML = `<span>${exhibition.name}</span>`;
+    const actions = document.createElement("div");
+    actions.className = "exhibition-actions";
+
     const button = document.createElement("button");
     button.textContent = exhibition.is_active ? "使用中" : "切换";
     button.disabled = !!exhibition.is_active;
@@ -117,7 +120,29 @@ const loadDashboard = async () => {
       await api(`/api/admin/exhibitions/${exhibition.id}/activate`, { method: "POST" });
       loadDashboard();
     });
-    item.appendChild(button);
+    actions.appendChild(button);
+
+    if (!exhibition.is_active) {
+      const delBtn = document.createElement("button");
+      delBtn.textContent = "删除";
+      delBtn.className = "ghost danger";
+      delBtn.addEventListener("click", async () => {
+        try {
+          await api(`/api/admin/exhibitions/${exhibition.id}`, { method: "DELETE" });
+          loadDashboard();
+        } catch (err) {
+          if (String(err).includes("request failed")) {
+            const confirmDelete = confirm("该展会已有打卡数据，确认删除？");
+            if (!confirmDelete) return;
+            await api(`/api/admin/exhibitions/${exhibition.id}?force=1`, { method: "DELETE" });
+            loadDashboard();
+          }
+        }
+      });
+      actions.appendChild(delBtn);
+    }
+
+    item.appendChild(actions);
     container.appendChild(item);
   };
 
@@ -155,7 +180,13 @@ logoutBtn.addEventListener("click", async () => {
 
 previewBtn.addEventListener("click", async () => {
   try {
-    const list = await api("/api/admin/draw-preview?limit=50");
+    const token = getToken();
+    const url = token
+      ? `/api/admin/draw-preview?limit=50&token=${encodeURIComponent(token)}`
+      : "/api/admin/draw-preview?limit=50";
+    const res = await fetch(url, { headers: { "Content-Type": "application/json" } });
+    if (!res.ok) throw new Error("request failed");
+    const list = await res.json();
     if (!list || !list.length) {
       alert("暂无抽奖记录");
       return;
