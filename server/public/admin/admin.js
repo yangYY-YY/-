@@ -3,7 +3,6 @@ const dashboard = document.getElementById("dashboard");
 const loginForm = document.getElementById("loginForm");
 const loginError = document.getElementById("loginError");
 const logoutBtn = document.getElementById("logoutBtn");
-const exportBtn = document.getElementById("exportBtn");
 const previewBtn = document.getElementById("previewBtn");
 const previewModal = document.getElementById("previewModal");
 const previewClose = document.getElementById("previewClose");
@@ -153,11 +152,6 @@ logoutBtn.addEventListener("click", async () => {
   loginSection.classList.remove("hidden");
 });
 
-exportBtn.addEventListener("click", () => {
-  const token = getToken();
-  const url = token ? `/api/admin/export?token=${encodeURIComponent(token)}` : "/api/admin/export";
-  window.location.href = url;
-});
 
 previewBtn.addEventListener("click", async () => {
   try {
