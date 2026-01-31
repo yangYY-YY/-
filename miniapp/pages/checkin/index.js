@@ -5,13 +5,11 @@
     form: {
       companyName: "",
       signerName: "",
-      phone: "",
-      location: ""
+      phone: ""
     }
   },
   onLoad() {
     this.loadActive();
-    this.detectLocation();
   },
   onShow() {
     const result = wx.getStorageSync("lastDrawResult") || "";
@@ -37,21 +35,12 @@
     const field = e.currentTarget.dataset.field;
     this.setData({ [`form.${field}`]: e.detail.value });
   },
-  async detectLocation() {
-    wx.getLocation({
-      type: "wgs84",
-      success: (res) => {
-        const location = `纬度${res.latitude.toFixed(4)} 经度${res.longitude.toFixed(4)}`;
-        this.setData({ "form.location": location });
-      }
-    });
-  },
   openAdmin() {
     wx.navigateTo({ url: "/pages/admin/index" });
   },
   async submit() {
-    const { companyName, signerName, phone, location } = this.data.form;
-    if (!companyName || !signerName || !phone || !location) {
+    const { companyName, signerName, phone } = this.data.form;
+    if (!companyName || !signerName || !phone) {
       wx.showToast({ title: "请完整填写", icon: "none" });
       return;
     }
@@ -63,7 +52,7 @@
     wx.request({
       url: `${app.globalData.apiBase}/api/public/checkin`,
       method: "POST",
-      data: { companyName, signerName, phone, location },
+      data: { companyName, signerName, phone },
       success: () => {
         wx.navigateTo({ url: `/pages/success/index?phone=${phone}` });
       },

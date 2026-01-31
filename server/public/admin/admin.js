@@ -3,10 +3,15 @@ const dashboard = document.getElementById("dashboard");
 const loginForm = document.getElementById("loginForm");
 const loginError = document.getElementById("loginError");
 const logoutBtn = document.getElementById("logoutBtn");
-const exportBtn = document.getElementById("exportBtn");
 const previewBtn = document.getElementById("previewBtn");
+const previewModal = document.getElementById("previewModal");
+const previewClose = document.getElementById("previewClose");
+const previewExport = document.getElementById("previewExport");
+const previewBody = document.getElementById("previewBody");
 const createExhibitionForm = document.getElementById("createExhibitionForm");
 const exhibitionList = document.getElementById("exhibitionList");
+const otherExhibitionList = document.getElementById("otherExhibitionList");
+const toggleOthers = document.getElementById("toggleOthers");
 const activeExhibition = document.getElementById("activeExhibition");
 const statCheckins = document.getElementById("statCheckins");
 const statWinners = document.getElementById("statWinners");
@@ -67,7 +72,7 @@ const renderPrizes = (prizes) => {
     item.innerHTML = `
       <input name="prizeName" placeholder="奖品名称" value="${prize.name}" />
       <input name="prizeProb" type="number" min="0" max="1" step="0.01" placeholder="中奖概率(0-1)" value="${prize.prob}" />
-      <input name="prizeQty" type="number" min="1" step="1" placeholder="奖品数量(可空)" value="${prize.qty ?? ""}" />
+      <input name="prizeQty" type="number" min="0" step="1" placeholder="奖品数量(可空)" value="${prize.qty ?? ""}" />
       <button type="button" class="ghost" data-index="${index}">删除</button>
     `;
     item.querySelector("button").addEventListener("click", () => {
@@ -96,10 +101,18 @@ const loadDashboard = async () => {
   renderPrizes(prizes);
 
   exhibitionList.innerHTML = "";
-  exhibitions.forEach((exhibition) => {
+  otherExhibitionList.innerHTML = "";
+
+  const active = exhibitions.find((e) => e.is_active);
+  const others = exhibitions.filter((e) => !e.is_active);
+
+  const renderExhibitionItem = (exhibition, container) => {
     const item = document.createElement("div");
     item.className = "exhibition-item";
     item.innerHTML = `<span>${exhibition.name}</span>`;
+    const actions = document.createElement("div");
+    actions.className = "exhibition-actions";
+
     const button = document.createElement("button");
     button.textContent = exhibition.is_active ? "使用中" : "切换";
     button.disabled = !!exhibition.is_active;
@@ -107,9 +120,36 @@ const loadDashboard = async () => {
       await api(`/api/admin/exhibitions/${exhibition.id}/activate`, { method: "POST" });
       loadDashboard();
     });
-    item.appendChild(button);
-    exhibitionList.appendChild(item);
-  });
+    actions.appendChild(button);
+
+    if (!exhibition.is_active) {
+      const delBtn = document.createElement("button");
+      delBtn.textContent = "删除";
+      delBtn.className = "ghost danger";
+      delBtn.addEventListener("click", async () => {
+        try {
+          await api(`/api/admin/exhibitions/${exhibition.id}`, { method: "DELETE" });
+          loadDashboard();
+        } catch (err) {
+          if (String(err).includes("request failed")) {
+            const confirmDelete = confirm("该展会已有打卡数据，确认删除？");
+            if (!confirmDelete) return;
+            await api(`/api/admin/exhibitions/${exhibition.id}?force=1`, { method: "DELETE" });
+            loadDashboard();
+          }
+        }
+      });
+      actions.appendChild(delBtn);
+    }
+
+    item.appendChild(actions);
+    container.appendChild(item);
+  };
+
+  if (active) {
+    renderExhibitionItem(active, exhibitionList);
+  }
+  others.forEach((exhibition) => renderExhibitionItem(exhibition, otherExhibitionList));
 };
 
 loginForm.addEventListener("submit", async (event) => {
@@ -137,29 +177,59 @@ logoutBtn.addEventListener("click", async () => {
   loginSection.classList.remove("hidden");
 });
 
-exportBtn.addEventListener("click", () => {
-  const token = getToken();
-  const url = token ? `/api/admin/export?token=${encodeURIComponent(token)}` : "/api/admin/export";
-  window.location.href = url;
-});
 
 previewBtn.addEventListener("click", async () => {
   try {
-    const list = await api("/api/admin/draw-preview?limit=50");
+    const token = getToken();
+    const url = token
+      ? `/api/admin/draw-preview?limit=50&token=${encodeURIComponent(token)}`
+      : "/api/admin/draw-preview?limit=50";
+    const res = await fetch(url, { headers: { "Content-Type": "application/json" }, credentials: "include" });
+    if (res.status === 401) {
+      clearToken();
+      alert("登录已失效，请重新登录");
+      loginSection.classList.remove("hidden");
+      dashboard.classList.add("hidden");
+      return;
+    }
+    if (!res.ok) throw new Error("request failed");
+    const list = await res.json();
     if (!list || !list.length) {
       alert("暂无抽奖记录");
       return;
     }
-    const lines = list.map((item, idx) => {
-      const time = item.draw_time || "";
-      const phone = item.phone || "";
-      const result = item.result || "";
-      return `${idx + 1}. ${phone} - ${result} ${time}`;
+    previewBody.innerHTML = "";
+    list.forEach((item) => {
+      const tr = document.createElement("tr");
+      const tdName = document.createElement("td");
+      const tdResult = document.createElement("td");
+      tdName.textContent = item.name || item.phone || "";
+      tdResult.textContent = item.result || "";
+      tr.appendChild(tdName);
+      tr.appendChild(tdResult);
+      previewBody.appendChild(tr);
     });
-    alert(lines.join("\n"));
+    previewModal.classList.remove("hidden");
   } catch (err) {
     alert("获取抽奖结果失败");
   }
+});
+
+previewClose.addEventListener("click", () => {
+  previewModal.classList.add("hidden");
+});
+
+previewModal.addEventListener("click", (event) => {
+  if (event.target === previewModal) {
+    previewModal.classList.add("hidden");
+  }
+});
+
+previewExport.addEventListener("click", () => {
+  const token = getToken();
+  const url = token ? `/api/admin/draw-export?token=${encodeURIComponent(token)}` : "/api/admin/draw-export";
+  window.location.href = url;
+  alert("已开始下载，若无提示请在浏览器下载记录中查看");
 });
 
 createExhibitionForm.addEventListener("submit", async (event) => {
@@ -187,7 +257,7 @@ drawForm.addEventListener("submit", async (event) => {
     return;
   }
   const cleaned = prizes.filter((p) => p.name).map((p) => {
-    const qty = Number.isFinite(p.qty) && p.qty > 0 ? Math.floor(p.qty) : null;
+    const qty = Number.isFinite(p.qty) && p.qty >= 0 ? Math.floor(p.qty) : null;
     return {
       name: p.name,
       weight: Number(p.prob || 0),
@@ -219,3 +289,7 @@ const autoLogin = async () => {
 };
 
 autoLogin();
+
+toggleOthers.addEventListener("change", () => {
+  otherExhibitionList.classList.toggle("hidden", !toggleOthers.checked);
+});

@@ -9,9 +9,6 @@
     <view class="label">签到人手机号</view>
     <input class="input" placeholder="11位手机号" maxlength="11" type="number" value="{{form.phone}}" bindinput="onInput" data-field="phone" />
 
-    <view class="label">签到地点</view>
-    <input class="input" placeholder="自动识别或手动填写" value="{{form.location}}" bindinput="onInput" data-field="location" />
-
     <view class="button" bindtap="submit">提交打卡</view>
     <view class="muted">当前展会：{{activeExhibition.name}}</view>
     <view class="muted" wx:if="{{lastDrawResult}}">抽奖结果：{{lastDrawResult}}</view>

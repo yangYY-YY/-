@@ -15,6 +15,7 @@ import {
   listExhibitions,
   createExhibition,
   setActiveExhibition,
+  deleteExhibition,
   insertCheckin,
   getHistoryByPhone,
   getMyCheckins,
@@ -25,6 +26,7 @@ import {
   exportExhibitionExcel,
   getAdminSummary,
   getDrawPreview,
+  exportDrawExcel,
 } from "./services.js";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -146,6 +148,15 @@ app.get("/api/admin/draw-preview", requireAdmin, (req, res) => {
   res.json(getDrawPreview(Number.isFinite(limit) ? Math.min(Math.max(limit, 1), 200) : 50));
 });
 
+app.get("/api/admin/draw-export", requireAdmin, async (req, res) => {
+  const active = getActiveExhibition();
+  const buffer = await exportDrawExcel(active.id);
+  const fileName = `draws_${active.id}.xlsx`;
+  res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+  res.setHeader("Content-Disposition", `attachment; filename=${fileName}`);
+  res.send(buffer);
+});
+
 app.get("/api/admin/exhibitions", requireAdmin, (req, res) => {
   res.json(listExhibitions());
 });
@@ -160,6 +171,17 @@ app.post("/api/admin/exhibitions/:id/activate", requireAdmin, (req, res) => {
   const id = Number(req.params.id);
   if (!id) return res.status(400).json({ error: "invalid" });
   res.json(setActiveExhibition(id));
+});
+
+app.delete("/api/admin/exhibitions/:id", requireAdmin, (req, res) => {
+  const id = Number(req.params.id);
+  if (!id) return res.status(400).json({ error: "invalid" });
+  const force = req.query.force === "1";
+  const result = deleteExhibition(id, force);
+  if (result.ok) return res.json(result);
+  if (result.error === "active") return res.status(400).json({ error: "active" });
+  if (result.error === "has_data") return res.status(409).json({ error: "has_data" });
+  return res.status(404).json({ error: "not_found" });
 });
 
 app.get("/api/admin/draw", requireAdmin, (req, res) => {
@@ -196,14 +218,14 @@ app.get("/api/public/draw-settings", (req, res) => {
 
 app.post("/api/public/checkin", (req, res) => {
   const { companyName, signerName, phone, location } = req.body || {};
-  if (!companyName || !signerName || !phone || !location) {
+  if (!companyName || !signerName || !phone) {
     return res.status(400).json({ error: "missing" });
   }
   if (!/^\d{11}$/.test(phone)) {
     return res.status(400).json({ error: "phone" });
   }
   const active = getActiveExhibition();
-  const record = insertCheckin(active.id, { companyName, signerName, phone, location });
+  const record = insertCheckin(active.id, { companyName, signerName, phone, location: location || "" });
   res.json(record);
 });
 

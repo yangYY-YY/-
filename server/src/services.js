@@ -36,6 +36,26 @@ export const setActiveExhibition = (id) => {
   return getActiveExhibition();
 };
 
+export const deleteExhibition = (id, force = false) => {
+  const exhibition = db.prepare("SELECT * FROM exhibitions WHERE id = ?").get(id);
+  if (!exhibition) return { ok: false, error: "not_found" };
+  if (exhibition.is_active) return { ok: false, error: "active" };
+
+  const countRow = db.prepare("SELECT COUNT(*) AS count FROM checkins WHERE exhibition_id = ?").get(id);
+  const hasData = countRow.count > 0;
+  if (hasData && !force) {
+    return { ok: false, error: "has_data" };
+  }
+
+  const tx = db.transaction(() => {
+    db.prepare("DELETE FROM draw_records WHERE exhibition_id = ?").run(id);
+    db.prepare("DELETE FROM checkins WHERE exhibition_id = ?").run(id);
+    db.prepare("DELETE FROM exhibitions WHERE id = ?").run(id);
+  });
+  tx();
+  return { ok: true, deleted: true };
+};
+
 export const insertCheckin = (exhibitionId, payload) => {
   const checkinTime = nowIso();
   const result = db
@@ -78,7 +98,7 @@ export const updateDrawSettings = ({ winRate, prizes }) => {
     ? prizes.map((p) => ({
         name: p?.name || "",
         weight: Number(p?.weight || 0),
-        qty: Number.isFinite(p?.qty) && p.qty > 0 ? Math.floor(p.qty) : null,
+        qty: Number.isFinite(p?.qty) && p.qty >= 0 ? Math.floor(p.qty) : null,
       }))
     : [];
   const value = JSON.stringify({ winRate: normalizedWinRate, prizes: cleanPrizes });
@@ -105,6 +125,7 @@ export const recordDraw = (exhibitionId, phone, settings) => {
   if (isWin) {
     const configured = settings.prizes || [];
     const available = configured.filter((prize) => {
+      if (prize.qty === 0) return false;
       if (!Number.isFinite(prize.qty) || prize.qty === null) return true;
       const row = db
         .prepare(
@@ -179,11 +200,41 @@ export const getDrawPreview = (limit = 50) => {
   const active = getActiveExhibition();
   return db
     .prepare(
-      `SELECT phone, result, draw_time
-       FROM draw_records
-       WHERE exhibition_id = ?
+      `SELECT phone,
+        (SELECT signer_name FROM checkins c WHERE c.exhibition_id = d.exhibition_id AND c.phone = d.phone ORDER BY c.checkin_time ASC LIMIT 1) AS name,
+        result, draw_time
+       FROM draw_records d
+       WHERE d.exhibition_id = ?
        ORDER BY draw_time DESC
        LIMIT ?`
     )
     .all(active.id, limit);
+};
+
+export const exportDrawExcel = async (exhibitionId) => {
+  const workbook = new ExcelJS.Workbook();
+  const sheet = workbook.addWorksheet("draws");
+  sheet.columns = [
+    { header: "姓名", key: "name", width: 16 },
+    { header: "手机号", key: "phone", width: 16 },
+    { header: "抽奖结果", key: "result", width: 20 },
+    { header: "抽奖时间", key: "draw_time", width: 22 },
+  ];
+
+  const rows = db
+    .prepare(
+      `SELECT phone,
+        (SELECT signer_name FROM checkins c WHERE c.exhibition_id = d.exhibition_id AND c.phone = d.phone ORDER BY c.checkin_time ASC LIMIT 1) AS name,
+        result, draw_time
+       FROM draw_records d
+       WHERE d.exhibition_id = ?
+       ORDER BY draw_time DESC`
+    )
+    .all(exhibitionId);
+
+  for (const row of rows) {
+    sheet.addRow(row);
+  }
+
+  return workbook.xlsx.writeBuffer();
 };
