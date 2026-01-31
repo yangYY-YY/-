@@ -78,7 +78,7 @@ export const updateDrawSettings = ({ winRate, prizes }) => {
     ? prizes.map((p) => ({
         name: p?.name || "",
         weight: Number(p?.weight || 0),
-        qty: Number.isFinite(p?.qty) && p.qty > 0 ? Math.floor(p.qty) : null,
+        qty: Number.isFinite(p?.qty) && p.qty >= 0 ? Math.floor(p.qty) : null,
       }))
     : [];
   const value = JSON.stringify({ winRate: normalizedWinRate, prizes: cleanPrizes });
@@ -105,6 +105,7 @@ export const recordDraw = (exhibitionId, phone, settings) => {
   if (isWin) {
     const configured = settings.prizes || [];
     const available = configured.filter((prize) => {
+      if (prize.qty === 0) return false;
       if (!Number.isFinite(prize.qty) || prize.qty === null) return true;
       const row = db
         .prepare(
@@ -186,4 +187,29 @@ export const getDrawPreview = (limit = 50) => {
        LIMIT ?`
     )
     .all(active.id, limit);
+};
+
+export const exportDrawExcel = async (exhibitionId) => {
+  const workbook = new ExcelJS.Workbook();
+  const sheet = workbook.addWorksheet("draws");
+  sheet.columns = [
+    { header: "手机号", key: "phone", width: 16 },
+    { header: "抽奖结果", key: "result", width: 20 },
+    { header: "抽奖时间", key: "draw_time", width: 22 },
+  ];
+
+  const rows = db
+    .prepare(
+      `SELECT phone, result, draw_time
+       FROM draw_records
+       WHERE exhibition_id = ?
+       ORDER BY draw_time DESC`
+    )
+    .all(exhibitionId);
+
+  for (const row of rows) {
+    sheet.addRow(row);
+  }
+
+  return workbook.xlsx.writeBuffer();
 };
