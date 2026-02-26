@@ -1,13 +1,20 @@
-﻿const loginSection = document.getElementById("login");
+const loginSection = document.getElementById("login");
 const dashboard = document.getElementById("dashboard");
 const loginForm = document.getElementById("loginForm");
 const loginError = document.getElementById("loginError");
 const logoutBtn = document.getElementById("logoutBtn");
+const checkinsBtn = document.getElementById("checkinsBtn");
+
 const previewBtn = document.getElementById("previewBtn");
 const previewModal = document.getElementById("previewModal");
 const previewClose = document.getElementById("previewClose");
 const previewExport = document.getElementById("previewExport");
 const previewBody = document.getElementById("previewBody");
+
+const checkinsModal = document.getElementById("checkinsModal");
+const checkinsClose = document.getElementById("checkinsClose");
+const checkinsBody = document.getElementById("checkinsBody");
+
 const createExhibitionForm = document.getElementById("createExhibitionForm");
 const exhibitionList = document.getElementById("exhibitionList");
 const otherExhibitionList = document.getElementById("otherExhibitionList");
@@ -29,14 +36,17 @@ const api = async (url, options = {}) => {
   const token = getToken();
   const headers = { "Content-Type": "application/json", ...(options.headers || {}) };
   if (token) headers.Authorization = `Bearer ${token}`;
+
   const res = await fetch(url, {
     headers,
     credentials: "include",
     ...options,
   });
+
   if (!res.ok) {
     throw new Error("request failed");
   }
+
   return res.json();
 };
 
@@ -75,16 +85,19 @@ const renderPrizes = (prizes) => {
       <input name="prizeQty" type="number" min="0" step="1" placeholder="奖品数量(可空)" value="${prize.qty ?? ""}" />
       <button type="button" class="ghost" data-index="${index}">删除</button>
     `;
+
     item.querySelector("button").addEventListener("click", () => {
       const current = getPrizeRows();
       current.splice(index, 1);
       renderPrizes(current);
     });
+
     item.querySelector("input[name='prizeName']").addEventListener("input", updatePrizeSum);
     item.querySelector("input[name='prizeProb']").addEventListener("input", updatePrizeSum);
     item.querySelector("input[name='prizeQty']").addEventListener("input", updatePrizeSum);
     prizeList.appendChild(item);
   });
+
   updatePrizeSum();
 };
 
@@ -146,16 +159,57 @@ const loadDashboard = async () => {
     container.appendChild(item);
   };
 
-  if (active) {
-    renderExhibitionItem(active, exhibitionList);
-  }
+  if (active) renderExhibitionItem(active, exhibitionList);
   others.forEach((exhibition) => renderExhibitionItem(exhibition, otherExhibitionList));
 };
+
+const ensureSession = async (errMsg) => {
+  alert(errMsg);
+  clearToken();
+  loginSection.classList.remove("hidden");
+  dashboard.classList.add("hidden");
+};
+
+checkinsBtn.addEventListener("click", async () => {
+  try {
+    const list = await api("/api/admin/checkins?limit=5000");
+    if (!list || !list.length) {
+      alert("暂无签到记录");
+      return;
+    }
+
+    checkinsBody.innerHTML = "";
+    list.forEach((item) => {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>${item.company_name || ""}</td>
+        <td>${item.signer_name || ""}</td>
+        <td>${item.phone || ""}</td>
+        <td>${item.checkin_time || ""}</td>
+        <td>${item.draw_result || "未抽奖"}</td>
+      `;
+      checkinsBody.appendChild(tr);
+    });
+
+    checkinsModal.classList.remove("hidden");
+  } catch (err) {
+    await ensureSession("获取签到记录失败，请重新登录");
+  }
+});
+
+checkinsClose.addEventListener("click", () => {
+  checkinsModal.classList.add("hidden");
+});
+
+checkinsModal.addEventListener("click", (event) => {
+  if (event.target === checkinsModal) checkinsModal.classList.add("hidden");
+});
 
 loginForm.addEventListener("submit", async (event) => {
   event.preventDefault();
   loginError.textContent = "";
   const payload = Object.fromEntries(new FormData(loginForm));
+
   try {
     const data = await api("/api/admin/login", {
       method: "POST",
@@ -177,7 +231,6 @@ logoutBtn.addEventListener("click", async () => {
   loginSection.classList.remove("hidden");
 });
 
-
 previewBtn.addEventListener("click", async () => {
   try {
     const token = getToken();
@@ -185,19 +238,19 @@ previewBtn.addEventListener("click", async () => {
       ? `/api/admin/draw-preview?limit=50&token=${encodeURIComponent(token)}`
       : "/api/admin/draw-preview?limit=50";
     const res = await fetch(url, { headers: { "Content-Type": "application/json" }, credentials: "include" });
+
     if (res.status === 401) {
-      clearToken();
-      alert("登录已失效，请重新登录");
-      loginSection.classList.remove("hidden");
-      dashboard.classList.add("hidden");
+      await ensureSession("登录已失效，请重新登录");
       return;
     }
     if (!res.ok) throw new Error("request failed");
+
     const list = await res.json();
     if (!list || !list.length) {
       alert("暂无抽奖记录");
       return;
     }
+
     previewBody.innerHTML = "";
     list.forEach((item) => {
       const tr = document.createElement("tr");
@@ -209,6 +262,7 @@ previewBtn.addEventListener("click", async () => {
       tr.appendChild(tdResult);
       previewBody.appendChild(tr);
     });
+
     previewModal.classList.remove("hidden");
   } catch (err) {
     alert("获取抽奖结果失败");
@@ -220,9 +274,7 @@ previewClose.addEventListener("click", () => {
 });
 
 previewModal.addEventListener("click", (event) => {
-  if (event.target === previewModal) {
-    previewModal.classList.add("hidden");
-  }
+  if (event.target === previewModal) previewModal.classList.add("hidden");
 });
 
 previewExport.addEventListener("click", () => {
@@ -256,21 +308,18 @@ drawForm.addEventListener("submit", async (event) => {
     alert("中奖概率合计必须等于 1");
     return;
   }
-  const cleaned = prizes.filter((p) => p.name).map((p) => {
-    const qty = Number.isFinite(p.qty) && p.qty >= 0 ? Math.floor(p.qty) : null;
-    return {
+
+  const cleaned = prizes
+    .filter((p) => p.name)
+    .map((p) => ({
       name: p.name,
       weight: Number(p.prob || 0),
-      qty,
-    };
-  });
-  const payload = {
-    winRate: 1,
-    prizes: cleaned,
-  };
+      qty: Number.isFinite(p.qty) && p.qty >= 0 ? Math.floor(p.qty) : null,
+    }));
+
   await api("/api/admin/draw", {
     method: "POST",
-    body: JSON.stringify(payload),
+    body: JSON.stringify({ winRate: 1, prizes: cleaned }),
   });
   alert("已保存");
 });

@@ -1,4 +1,4 @@
-﻿<!doctype html>
+<!doctype html>
 <html lang="zh-CN">
   <head>
     <meta charset="utf-8" />
@@ -31,7 +31,10 @@
             <h2>后台管理</h2>
             <p class="muted" id="activeExhibition"></p>
           </div>
-          <button id="logoutBtn" class="ghost">退出</button>
+          <div class="header-actions">
+            <button id="checkinsBtn" class="ghost" type="button">签到记录</button>
+            <button id="logoutBtn" class="ghost" type="button">退出</button>
+          </div>
         </header>
 
         <div class="grid">
@@ -109,6 +112,32 @@
         </div>
       </div>
     </div>
+
+    <div class="modal hidden" id="checkinsModal">
+      <div class="modal-card modal-wide">
+        <header>
+          <h3>签到记录</h3>
+          <div class="modal-actions">
+            <button type="button" class="ghost" id="checkinsClose">关闭</button>
+          </div>
+        </header>
+        <div class="table-wrap">
+          <table class="preview-table">
+            <thead>
+              <tr>
+                <th>公司名称</th>
+                <th>签到人</th>
+                <th>手机号</th>
+                <th>签到时间</th>
+                <th>抽奖状态</th>
+              </tr>
+            </thead>
+            <tbody id="checkinsBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
     <script src="./admin.js"></script>
   </body>
 </html>

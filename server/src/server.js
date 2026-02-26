@@ -1,4 +1,4 @@
-﻿import dotenv from "dotenv";
+import dotenv from "dotenv";
 dotenv.config();
 
 import express from "express";
@@ -26,6 +26,7 @@ import {
   exportExhibitionExcel,
   getAdminSummary,
   getDrawPreview,
+  getCheckinRecords,
   exportDrawExcel,
 } from "./services.js";
 
@@ -148,6 +149,11 @@ app.get("/api/admin/draw-preview", requireAdmin, (req, res) => {
   res.json(getDrawPreview(Number.isFinite(limit) ? Math.min(Math.max(limit, 1), 200) : 50));
 });
 
+app.get("/api/admin/checkins", requireAdmin, (req, res) => {
+  const limit = Number(req.query.limit || 1000);
+  const safeLimit = Number.isFinite(limit) ? Math.min(Math.max(limit, 1), 5000) : 1000;
+  res.json(getCheckinRecords(safeLimit));
+});
 app.get("/api/admin/draw-export", requireAdmin, async (req, res) => {
   const active = getActiveExhibition();
   const buffer = await exportDrawExcel(active.id);
@@ -269,3 +275,6 @@ const start = async () => {
 };
 
 start();
+
+
+

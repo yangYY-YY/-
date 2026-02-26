@@ -1,4 +1,12 @@
-﻿Page({
+const BG_IMAGE_WIDTH = 503;
+const BG_IMAGE_HEIGHT = 858;
+
+// White disk region in background image (ratio on source image)
+const DISK_CENTER_X_RATIO = 0.5;
+const DISK_CENTER_Y_RATIO = 0.511;
+const DISK_DIAMETER_RATIO = 0.595;
+
+Page({
   data: {
     phone: "",
     result: "",
@@ -7,12 +15,57 @@
     spinning: false,
     angle: 0,
     pointerStyle: "",
-    wheelStyle: ""
+    wheelStyle: "",
+    wheelWrapStyle: "",
+    pointerLineStyle: "",
+    pointerHeadStyle: "",
+    drawBtnStyle: "",
+    wheelSizePx: 0,
   },
+
   onLoad(options) {
     this.setData({ phone: options.phone || "" });
     this.loadPrizes();
   },
+
+  onReady() {
+    this.updateLayoutByBackground();
+  },
+
+  onShow() {
+    this.updateLayoutByBackground();
+  },
+
+  updateLayoutByBackground() {
+    const info = wx.getWindowInfo ? wx.getWindowInfo() : wx.getSystemInfoSync();
+    const containerWidth = info.windowWidth;
+    const containerHeight = info.windowHeight;
+
+    const scale = Math.max(containerWidth / BG_IMAGE_WIDTH, containerHeight / BG_IMAGE_HEIGHT);
+    const renderWidth = BG_IMAGE_WIDTH * scale;
+    const renderHeight = BG_IMAGE_HEIGHT * scale;
+    const offsetX = (containerWidth - renderWidth) / 2;
+    const offsetY = (containerHeight - renderHeight) / 2;
+
+    const wheelSize = renderWidth * DISK_DIAMETER_RATIO;
+    const wheelLeft = offsetX + renderWidth * DISK_CENTER_X_RATIO - wheelSize / 2;
+    const wheelTop = offsetY + renderHeight * DISK_CENTER_Y_RATIO - wheelSize / 2;
+
+    const pointerLen = Math.round(wheelSize * 0.4);
+    const buttonTop = wheelTop + wheelSize + 26;
+
+    this.setData(
+      {
+        wheelSizePx: wheelSize,
+        wheelWrapStyle: `left:${wheelLeft}px;top:${wheelTop}px;width:${wheelSize}px;height:${wheelSize}px;`,
+        pointerLineStyle: `top:-${pointerLen}px;height:${pointerLen}px;`,
+        pointerHeadStyle: `top:-${pointerLen + 26}px;`,
+        drawBtnStyle: `top:${buttonTop}px;`,
+      },
+      () => this.buildLabels()
+    );
+  },
+
   loadPrizes() {
     const app = getApp();
     wx.request({
@@ -23,66 +76,72 @@
       },
       fail: () => {
         this.setData({ prizes: [] }, () => this.buildLabels());
-      }
+      },
     });
   },
+
   buildWheelStyle() {
     const prizes = this.data.prizes;
     if (!prizes.length) return "";
+
     const count = prizes.length;
     const slice = 360 / count;
-    const palette = [
-      "#f6e7d6",
-      "#fef6ea",
-      "#e9f1e7",
-      "#f2e9f7",
-      "#e8f0f7",
-      "#f7efe6",
-      "#f1f5e9",
-      "#f7ebe1",
-      "#e9eef2",
-      "#f2f0e9"
-    ];
-    const borderColor = "#e3d8c9";
+    const oddPalette = ["#cfefff", "#e7f6ff", "#b9ddff"];
+    const evenPalette = ["#e9f7ff", "#c9e6ff"];
+    const palette = count % 2 === 0 ? evenPalette : oddPalette;
+    const borderColor = "rgb(46, 84, 161)";
+    const border = 0.8;
+
     const stops = [];
-    for (let i = 0; i < count; i++) {
+    for (let i = 0; i < count; i += 1) {
       const start = i * slice;
       const end = start + slice;
       const color = palette[i % palette.length];
-      const gap = 0.8; // degrees gap for border
-      const segStart = start + gap;
-      const segEnd = end - gap;
-      stops.push(`${borderColor} ${start}deg ${segStart}deg`);
-      stops.push(`${color} ${segStart}deg ${segEnd}deg`);
-      stops.push(`${borderColor} ${segEnd}deg ${end}deg`);
+      const segStart = start + border;
+      if (segStart >= end) {
+        stops.push(`${borderColor} ${start}deg ${end}deg`);
+      } else {
+        stops.push(`${borderColor} ${start}deg ${segStart}deg`);
+        stops.push(`${color} ${segStart}deg ${end}deg`);
+      }
     }
+
     return `background: conic-gradient(${stops.join(", ")});`;
   },
+
   buildLabels() {
     const prizes = this.data.prizes;
-    if (!prizes.length) {
-      this.setData({ labelStyles: [], wheelStyle: "" });
+    const wheelSize = this.data.wheelSizePx;
+    if (!prizes.length || !wheelSize) {
+      this.setData({ labelStyles: [], wheelStyle: this.buildWheelStyle() });
       return;
     }
+
     const count = prizes.length;
-    const radius = 130; // rpx (place text near edge)
-    const center = 150; // rpx
+    const radius = wheelSize * 0.33;
+    const center = wheelSize / 2;
+
     const labelStyles = prizes.map((text, index) => {
       const angle = (360 / count) * (index + 0.5) - 90;
       const rad = (angle * Math.PI) / 180;
       const x = center + radius * Math.cos(rad);
       const y = center + radius * Math.sin(rad);
-      const style = `left:${x}rpx;top:${y}rpx;transform:translate(-50%,-50%);`;
-      return { text, style };
+      return {
+        text,
+        style: `left:${x}px;top:${y}px;transform:translate(-50%,-50%);`,
+      };
     });
+
     this.setData({ labelStyles, wheelStyle: this.buildWheelStyle() });
   },
+
   draw() {
     if (this.data.spinning) return;
     if (!this.data.prizes.length) {
       wx.showModal({ title: "提示", content: "暂无奖品配置", showCancel: false });
       return;
     }
+
     const app = getApp();
     this.setData({ spinning: true, result: "" });
 
@@ -99,21 +158,21 @@
             title: "提示",
             content: msg,
             showCancel: false,
-            success: () => {
-              wx.navigateBack();
-            }
+            success: () => wx.navigateBack(),
           });
           return;
         }
+
         const result = res.data?.result || "未中奖";
         this.spinToResult(result);
       },
       fail: () => {
         this.setData({ spinning: false, result: "抽奖失败" });
         wx.showModal({ title: "提示", content: "抽奖失败", showCancel: false });
-      }
+      },
     });
   },
+
   spinToResult(result) {
     const prizes = this.data.prizes;
     let index = prizes.indexOf(result);
@@ -127,12 +186,14 @@
 
     const startAngle = start % 360;
     const endAngle = start + target;
+
     this.setData({
-      pointerStyle: `transform: translate(-50%, -50%) rotate(${startAngle}deg);`
+      pointerStyle: `transform: translate(-50%, -50%) rotate(${startAngle}deg);`,
     });
+
     setTimeout(() => {
       this.setData({
-        pointerStyle: `transform: translate(-50%, -50%) rotate(${endAngle}deg);`
+        pointerStyle: `transform: translate(-50%, -50%) rotate(${endAngle}deg);`,
       });
     }, 50);
 
@@ -144,10 +205,8 @@
         title: "抽奖结果",
         content: result,
         showCancel: false,
-        success: () => {
-          wx.navigateBack();
-        }
+        success: () => wx.navigateBack(),
       });
     }, duration + 50);
-  }
+  },
 });
