@@ -120,7 +120,7 @@ const pickPrize = (prizes) => {
 export const recordDraw = (exhibitionId, phone, settings) => {
   const winRate = Number(settings.winRate || 0);
   const isWin = Math.random() < winRate;
-  let result = "鏈腑濂?;
+  let result = "未中奖";
 
   if (isWin) {
     const configured = settings.prizes || [];
@@ -136,7 +136,7 @@ export const recordDraw = (exhibitionId, phone, settings) => {
     });
     const prize = pickPrize(available);
     if (!prize) {
-      result = "鏈腑濂?;
+      result = "未中奖";
     } else {
       result = prize.name;
     }
@@ -154,13 +154,13 @@ export const exportExhibitionExcel = async (exhibitionId) => {
   const workbook = new ExcelJS.Workbook();
   const sheet = workbook.addWorksheet("checkins");
   sheet.columns = [
-    { header: "灞曚細", key: "exhibition_name", width: 20 },
-    { header: "鍏徃鍚嶇О", key: "company_name", width: 24 },
-    { header: "绛惧埌浜?, key: "signer_name", width: 16 },
-    { header: "鎵嬫満", key: "phone", width: 16 },
-    { header: "绛惧埌鍦扮偣", key: "location", width: 20 },
-    { header: "绛惧埌鏃堕棿", key: "checkin_time", width: 22 },
-    { header: "鎶藉缁撴灉", key: "draw_result", width: 16 },
+    { header: "展会", key: "exhibition_name", width: 20 },
+    { header: "公司名称", key: "company_name", width: 24 },
+    { header: "签到人", key: "signer_name", width: 16 },
+    { header: "手机", key: "phone", width: 16 },
+    { header: "签到地点", key: "location", width: 20 },
+    { header: "签到时间", key: "checkin_time", width: 22 },
+    { header: "抽奖结果", key: "draw_result", width: 16 },
   ];
 
   const rows = db
@@ -197,6 +197,7 @@ export const getCheckinRecords = (limit = 500) => {
     )
     .all(active.id, limit);
 };
+
 export const getAdminSummary = () => {
   const active = getActiveExhibition();
   const countRow = db
@@ -231,10 +232,10 @@ export const exportDrawExcel = async (exhibitionId) => {
   const workbook = new ExcelJS.Workbook();
   const sheet = workbook.addWorksheet("draws");
   sheet.columns = [
-    { header: "濮撳悕", key: "name", width: 16 },
-    { header: "鎵嬫満鍙?, key: "phone", width: 16 },
-    { header: "鎶藉缁撴灉", key: "result", width: 20 },
-    { header: "鎶藉鏃堕棿", key: "draw_time", width: 22 },
+    { header: "姓名", key: "name", width: 16 },
+    { header: "手机号", key: "phone", width: 16 },
+    { header: "抽奖结果", key: "result", width: 20 },
+    { header: "抽奖时间", key: "draw_time", width: 22 },
   ];
 
   const rows = db
@@ -254,5 +255,3 @@ export const exportDrawExcel = async (exhibitionId) => {
 
   return workbook.xlsx.writeBuffer();
 };
-
-
