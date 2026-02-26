@@ -70,7 +70,7 @@ const getPrizeRows = () => {
 const updatePrizeSum = () => {
   const prizes = getPrizeRows();
   const total = prizes.reduce((sum, p) => sum + (Number(p.prob) || 0), 0);
-  prizeSum.textContent = `已配置中奖概率合计：${total.toFixed(2)}`;
+  prizeSum.textContent = `宸查厤缃腑濂栨鐜囧悎璁★細${total.toFixed(2)}`;
   return { prizes, total };
 };
 
@@ -80,10 +80,10 @@ const renderPrizes = (prizes) => {
     const item = document.createElement("div");
     item.className = "prize-item";
     item.innerHTML = `
-      <input name="prizeName" placeholder="奖品名称" value="${prize.name}" />
-      <input name="prizeProb" type="number" min="0" max="1" step="0.01" placeholder="中奖概率(0-1)" value="${prize.prob}" />
-      <input name="prizeQty" type="number" min="0" step="1" placeholder="奖品数量(可空)" value="${prize.qty ?? ""}" />
-      <button type="button" class="ghost" data-index="${index}">删除</button>
+      <input name="prizeName" placeholder="濂栧搧鍚嶇О" value="${prize.name}" />
+      <input name="prizeProb" type="number" min="0" max="1" step="0.01" placeholder="涓姒傜巼(0-1)" value="${prize.prob}" />
+      <input name="prizeQty" type="number" min="0" step="1" placeholder="濂栧搧鏁伴噺(鍙┖)" value="${prize.qty ?? ""}" />
+      <button type="button" class="ghost" data-index="${index}">鍒犻櫎</button>
     `;
 
     item.querySelector("button").addEventListener("click", () => {
@@ -106,7 +106,7 @@ const loadDashboard = async () => {
   const exhibitions = await api("/api/admin/exhibitions");
   const draw = await api("/api/admin/draw");
 
-  activeExhibition.textContent = `当前展会：${summary.activeExhibition.name}`;
+  activeExhibition.textContent = `褰撳墠灞曚細锛?{summary.activeExhibition.name}`;
   statCheckins.textContent = summary.checkins;
   statWinners.textContent = summary.winners;
 
@@ -127,7 +127,7 @@ const loadDashboard = async () => {
     actions.className = "exhibition-actions";
 
     const button = document.createElement("button");
-    button.textContent = exhibition.is_active ? "使用中" : "切换";
+    button.textContent = exhibition.is_active ? "浣跨敤涓? : "鍒囨崲";
     button.disabled = !!exhibition.is_active;
     button.addEventListener("click", async () => {
       await api(`/api/admin/exhibitions/${exhibition.id}/activate`, { method: "POST" });
@@ -137,7 +137,7 @@ const loadDashboard = async () => {
 
     if (!exhibition.is_active) {
       const delBtn = document.createElement("button");
-      delBtn.textContent = "删除";
+      delBtn.textContent = "鍒犻櫎";
       delBtn.className = "ghost danger";
       delBtn.addEventListener("click", async () => {
         try {
@@ -145,7 +145,7 @@ const loadDashboard = async () => {
           loadDashboard();
         } catch (err) {
           if (String(err).includes("request failed")) {
-            const confirmDelete = confirm("该展会已有打卡数据，确认删除？");
+            const confirmDelete = confirm("璇ュ睍浼氬凡鏈夋墦鍗℃暟鎹紝纭鍒犻櫎锛?);
             if (!confirmDelete) return;
             await api(`/api/admin/exhibitions/${exhibition.id}?force=1`, { method: "DELETE" });
             loadDashboard();
@@ -163,6 +163,12 @@ const loadDashboard = async () => {
   others.forEach((exhibition) => renderExhibitionItem(exhibition, otherExhibitionList));
 };
 
+const formatTimeToSecond = (value) => {
+  if (!value) return "";
+  const text = String(value).replace("T", " ");
+  const noMs = text.replace(/\.\d+Z?$/, "");
+  return noMs.replace(/Z$/, "");
+};
 const ensureSession = async (errMsg) => {
   alert(errMsg);
   clearToken();
@@ -174,7 +180,7 @@ checkinsBtn.addEventListener("click", async () => {
   try {
     const list = await api("/api/admin/checkins?limit=5000");
     if (!list || !list.length) {
-      alert("暂无签到记录");
+      alert("鏆傛棤绛惧埌璁板綍");
       return;
     }
 
@@ -185,15 +191,15 @@ checkinsBtn.addEventListener("click", async () => {
         <td>${item.company_name || ""}</td>
         <td>${item.signer_name || ""}</td>
         <td>${item.phone || ""}</td>
-        <td>${item.checkin_time || ""}</td>
-        <td>${item.draw_result || "未抽奖"}</td>
+        <td>${formatTimeToSecond(item.checkin_time)}</td>
+        <td>${item.draw_result || "鏈娊濂?}</td>
       `;
       checkinsBody.appendChild(tr);
     });
 
     checkinsModal.classList.remove("hidden");
   } catch (err) {
-    await ensureSession("获取签到记录失败，请重新登录");
+    await ensureSession("鑾峰彇绛惧埌璁板綍澶辫触锛岃閲嶆柊鐧诲綍");
   }
 });
 
@@ -220,7 +226,7 @@ loginForm.addEventListener("submit", async (event) => {
     dashboard.classList.remove("hidden");
     loadDashboard();
   } catch (err) {
-    loginError.textContent = "账号或密码错误";
+    loginError.textContent = "璐﹀彿鎴栧瘑鐮侀敊璇?;
   }
 });
 
@@ -240,14 +246,14 @@ previewBtn.addEventListener("click", async () => {
     const res = await fetch(url, { headers: { "Content-Type": "application/json" }, credentials: "include" });
 
     if (res.status === 401) {
-      await ensureSession("登录已失效，请重新登录");
+      await ensureSession("鐧诲綍宸插け鏁堬紝璇烽噸鏂扮櫥褰?);
       return;
     }
     if (!res.ok) throw new Error("request failed");
 
     const list = await res.json();
     if (!list || !list.length) {
-      alert("暂无抽奖记录");
+      alert("鏆傛棤鎶藉璁板綍");
       return;
     }
 
@@ -265,7 +271,7 @@ previewBtn.addEventListener("click", async () => {
 
     previewModal.classList.remove("hidden");
   } catch (err) {
-    alert("获取抽奖结果失败");
+    alert("鑾峰彇鎶藉缁撴灉澶辫触");
   }
 });
 
@@ -281,7 +287,7 @@ previewExport.addEventListener("click", () => {
   const token = getToken();
   const url = token ? `/api/admin/draw-export?token=${encodeURIComponent(token)}` : "/api/admin/draw-export";
   window.location.href = url;
-  alert("已开始下载，若无提示请在浏览器下载记录中查看");
+  alert("宸插紑濮嬩笅杞斤紝鑻ユ棤鎻愮ず璇峰湪娴忚鍣ㄤ笅杞借褰曚腑鏌ョ湅");
 });
 
 createExhibitionForm.addEventListener("submit", async (event) => {
@@ -305,7 +311,7 @@ drawForm.addEventListener("submit", async (event) => {
   event.preventDefault();
   const { prizes, total } = updatePrizeSum();
   if (Math.abs(total - 1) > 0.0001) {
-    alert("中奖概率合计必须等于 1");
+    alert("涓姒傜巼鍚堣蹇呴』绛変簬 1");
     return;
   }
 
@@ -321,7 +327,7 @@ drawForm.addEventListener("submit", async (event) => {
     method: "POST",
     body: JSON.stringify({ winRate: 1, prizes: cleaned }),
   });
-  alert("已保存");
+  alert("宸蹭繚瀛?);
 });
 
 const autoLogin = async () => {
@@ -342,3 +348,4 @@ autoLogin();
 toggleOthers.addEventListener("change", () => {
   otherExhibitionList.classList.toggle("hidden", !toggleOthers.checked);
 });
+
