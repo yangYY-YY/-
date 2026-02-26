@@ -282,3 +282,13 @@ button.ghost {
 .modal-wide {
   width: min(980px, 100%);
 }
+
+#checkinsModal .preview-table {
+  table-layout: auto;
+}
+
+#checkinsModal .preview-table th,
+#checkinsModal .preview-table td {
+  width: auto;
+  white-space: nowrap;
+}
